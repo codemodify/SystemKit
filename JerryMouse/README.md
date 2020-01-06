@@ -1,5 +1,5 @@
 
-### ![](https://raw.github.com/codemodify/SystemKit/JerryMouse/master/logo.png)
+### ![](https://github.com/codemodify/SystemKit/raw/master/JerryMouse/logo.png)
 
 ### Jerry Mouse
 The Missing Application Server in Go
