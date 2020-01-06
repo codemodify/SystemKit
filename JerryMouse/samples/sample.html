@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+	</head>
+	<body>
+		<div id="LogContainer" style="overflow: scroll;"></div>
+		<script>
+			function addToLog(data) {
+				console.log(data);
+
+				var textElement = document.createTextNode(data);
+
+				var divElement = document.createElement("div");
+				divElement.appendChild(textElement);
+
+				document.getElementById("LogContainer").appendChild(divElement);
+			}
+			function setupWebSocket() {
+				var logContainer = document.getElementById("LogContainer");
+				while (logContainer.firstChild) {
+					logContainer.removeChild(logContainer.firstChild);
+				}
+
+				var threadId = -1;
+
+				var ws = new WebSocket("ws://127.0.0.1:9999/StreamTelemetry");
+				ws.onclose = function () {
+					var delay = 1000;
+					clearInterval(threadId);
+					setTimeout(setupWebSocket, delay);
+				};
+				ws.onopen = function (event) {
+					threadId = setInterval(function () {
+						var data = "Async Hi From Client @ " + (new Date()).toISOString();
+						ws.send(data);
+
+						addToLog("SEND: " + data);
+					}, 1000);
+				};
+				ws.onmessage = function (event) {
+					addToLog("RECV: " + event.data);
+				};
+				ws.onerror = function (event) {
+					console.log(event);
+				};
+				window.onbeforeunload = function (event) {
+					ws.close();
+				};
+			}
+
+			setupWebSocket();
+		</script>
+	</body>
+</html>
