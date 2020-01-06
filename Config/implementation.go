@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"sync"
 
 	logging "github.com/codemodify/SystemKit/Logging"
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
@@ -15,36 +14,46 @@ import (
 )
 
 var configInstance Config
-var configOnce sync.Once
 
-// LoadConfig -
+// LoadConfig - loads a custom config type, takes an existing instance usually created with `&CustomAppConfig{}`
 func LoadConfig(config Config) Config {
-	configOnce.Do(func() {
-		configInstance = config.DefaultConfig()
+	configInstance = config.DefaultConfig()
 
-		var configFileName = GetConfigDir() + string(os.PathSeparator) + "config.json"
-		if helpersFile.FileOrFolderExists(configFileName) {
-			file, err := ioutil.ReadFile(configFileName)
+	var configFileName = GetConfigFile()
+	if helpersFile.FileOrFolderExists(configFileName) {
+		file, err := ioutil.ReadFile(configFileName)
+		if err != nil {
+			logging.Instance().LogWarningWithFields(loggingC.Fields{
+				"method": helpersReflect.GetThisFuncName(),
+				"error":  fmt.Sprintf("unable to load config file %s, using default", configFileName),
+			})
+		} else {
+			err := json.Unmarshal(file, configInstance)
 			if err != nil {
 				logging.Instance().LogWarningWithFields(loggingC.Fields{
 					"method": helpersReflect.GetThisFuncName(),
 					"error":  fmt.Sprintf("unable to load config file %s, using default", configFileName),
 				})
-			} else {
-				err := json.Unmarshal(file, configInstance)
-				if err != nil {
-					logging.Instance().LogWarningWithFields(loggingC.Fields{
-						"method": helpersReflect.GetThisFuncName(),
-						"error":  fmt.Sprintf("unable to load config file %s, using default", configFileName),
-					})
 
-					configInstance = config.DefaultConfig()
-				}
+				configInstance = config.DefaultConfig()
 			}
 		}
-	})
+	}
 
 	return configInstance
+}
+
+type ConfigChangedEventHandler func(config Config)
+
+func OnConfigChanged(configChangedEventHandler ConfigChangedEventHandler) {
+	helpersFile.WatchFile(GetConfigFile(), func() {
+		configChangedEventHandler(LoadConfig(configInstance))
+	})
+}
+
+// SaveConfig -
+func SaveConfig(config Config) error {
+	return ioutil.WriteFile(GetConfigFile(), []byte(config.String()), 0644)
 }
 
 // GetConfigDir -
@@ -62,4 +71,9 @@ func GetConfigDir() string {
 		}
 	}
 	return directoryName
+}
+
+// GetConfigFile -
+func GetConfigFile() string {
+	return GetConfigDir() + string(os.PathSeparator) + "config.json"
 }
