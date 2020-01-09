@@ -10,7 +10,7 @@ import (
 
 	logging "github.com/codemodify/SystemKit/Logging"
 
-	jm "github.com/codemodify/SystemKit/JerryMouse"
+	jm "github.com/codemodify/SystemKit/AppServer"
 )
 
 // ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~

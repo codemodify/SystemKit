@@ -1,4 +1,4 @@
-package Helpers
+package DataTypes
 
 import "sync/atomic"
 import "runtime"

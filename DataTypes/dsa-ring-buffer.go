@@ -1,4 +1,4 @@
-package Helpers
+package DataTypes
 
 // RingBuffer -
 type RingBuffer struct {

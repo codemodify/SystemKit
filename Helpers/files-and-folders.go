@@ -2,9 +2,11 @@ package Helpers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -14,8 +16,32 @@ import (
 
 // FileOrFolderExists -
 func FileOrFolderExists(name string) bool {
-	_, error := os.Stat(name)
-	return !os.IsNotExist(error)
+	_, err := os.Stat(name)
+	return !os.IsNotExist(err)
+}
+
+// IsFolder -
+func IsFolder(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	return fileInfo.Mode().IsDir()
+}
+
+// IsFile -
+func IsFile(path string) bool {
+	return !IsFolder(path)
+}
+
+// MakeDirTree -
+func MakeDirTree(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return os.MkdirAll(path, 0755)
+	}
+
+	return nil
 }
 
 type FileChangedEventHandler func()
@@ -105,4 +131,75 @@ func WatchFile(filePath string, eventHandler FileChangedEventHandler) {
 	}()
 
 	initWG.Wait()
+}
+
+// ReadFileAsBytes -
+func ReadFileAsBytes(path string) ([]byte, error) {
+	fileBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return fileBytes, nil
+}
+
+// ReadFileAsString -
+func ReadFileAsString(path string) (string, error) {
+	bytes, err := ReadFileAsBytes(path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
+}
+
+// ReadFileAsLines -
+func ReadFileAsLines(path string) ([]string, error) {
+	fileAsString, err := ReadFileAsString(path)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return strings.Split(fileAsString, "\n"), nil
+}
+
+// ReadFileAsCSV -
+func ReadFileAsCSV(path string) ([][]string, error) {
+	lines, err := ReadFileAsLines(path)
+	if err != nil {
+		return [][]string{}, err
+	}
+
+	result := [][]string{}
+	for _, line := range lines {
+		result = append(result, strings.Split(line, ";"))
+	}
+
+	return result, nil
+}
+
+// ListFolderContent -
+func ListFolderContent(folder string, ext string) ([]string, error) {
+	fileList := make([]string, 0)
+	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Mode().IsRegular() {
+			if !IsNullOrEmpty(ext) {
+				if filepath.Ext(info.Name()) == ext {
+					fileList = append(fileList, path)
+				}
+			} else {
+				fileList = append(fileList, path)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return fileList, nil
 }
