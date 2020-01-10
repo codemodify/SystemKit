@@ -27,7 +27,10 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 		return
 	}
 
-	if logEntry.Type < loggingC.TypeWarning {
+	if logEntry.Type == loggingC.TypeTrace {
+		fmt.Println(HiGreenString(logEntry.Message))
+
+	} else if logEntry.Type < loggingC.TypeWarning {
 		fmt.Println(RedString(logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeWarning {
@@ -37,7 +40,7 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 		fmt.Println(WhiteString(logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeDebug {
-		fmt.Println(HiWhiteString(logEntry.Message))
+		fmt.Println(BlueString(logEntry.Message))
 
 	}
 }
