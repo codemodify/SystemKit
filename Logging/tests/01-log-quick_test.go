@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 
 	logging "github.com/codemodify/SystemKit/Logging"
@@ -9,7 +10,13 @@ import (
 func Test_01(t *testing.T) {
 	logging.Init(logging.NewConsoleLogger())
 
-	logging.Instance().LogInfo("Info line")
-	logging.Instance().LogWarning("Warning line")
+	logging.Instance().LogTrace("Trace line")
+	logging.Instance().LogPanic("Panic line")
+	logging.Instance().LogFatal("Fatal line")
 	logging.Instance().LogError("Error line")
+	logging.Instance().LogWarning("Warning line")
+	logging.Instance().LogInfo("Info line")
+	logging.Instance().LogDebug("Debug line")
+
+	fmt.Println()
 }
