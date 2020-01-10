@@ -17,6 +17,11 @@ func NewConsoleLogger(logUntil loggingC.LogType) loggingC.Logger {
 	}
 }
 
+func BlackStringYellowBG(format string, a ...interface{}) string {
+	c := New(FgBlack, BgYellow)
+	return c.Sprintf(format, a...)
+}
+
 func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 	if logEntry.Type == loggingC.TypeDisable {
 		return
@@ -28,7 +33,7 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 	}
 
 	if logEntry.Type == loggingC.TypeTrace {
-		fmt.Println(GreenString(logEntry.Message))
+		fmt.Println(BlackStringYellowBG(logEntry.Message))
 
 	} else if logEntry.Type < loggingC.TypeWarning {
 		fmt.Println(RedString(logEntry.Message))
