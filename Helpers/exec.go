@@ -58,3 +58,9 @@ func ExecInFolder(command string, folder string) (string, error) {
 
 	return string(bytes), nil
 }
+
+// ExecWithArgs -
+func ExecWithArgs(name string, args ...string) (out string, err error) {
+	stdout, err := exec.Command(name, args...).Output()
+	return string(stdout), err
+}
