@@ -53,7 +53,7 @@ func newSystemDFile(command ServiceCommand) systemDFile {
 	unit := systemDFile{
 		Label:         label,
 		Executable:    command.String(),
-		WorkingDir:    filepath.Dir(command.String()),
+		WorkingDir:    command.WorkingDir,
 		Description:   command.Description,
 		Documentation: command.Documentation,
 		User:          user,
