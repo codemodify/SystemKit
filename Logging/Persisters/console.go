@@ -37,7 +37,7 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 		fmt.Println(WhiteString(logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeDebug {
-		fmt.Println(GreenString(logEntry.Message))
+		fmt.Println(HiWhiteString(logEntry.Message))
 
 	}
 }
