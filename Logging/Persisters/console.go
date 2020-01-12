@@ -22,6 +22,11 @@ func BlackStringYellowBG(format string, a ...interface{}) string {
 	return c.Sprintf(format, a...)
 }
 
+func BlackStringWhiteBG(format string, a ...interface{}) string {
+	c := New(FgBlack, BgWhite)
+	return c.Sprintf(format, a...)
+}
+
 func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 	if logEntry.Type == loggingC.TypeDisable {
 		return
@@ -45,7 +50,7 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 		fmt.Println(WhiteString(logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeDebug {
-		fmt.Println(MagentaString(logEntry.Message))
+		fmt.Println(BlackStringWhiteBG(logEntry.Message))
 
 	}
 }
