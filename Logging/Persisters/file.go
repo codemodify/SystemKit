@@ -13,9 +13,21 @@ type fileLogger struct {
 	logUntil     loggingC.LogType
 }
 
+func fileOrFolderExists(name string) bool {
+	_, err := os.Stat(name)
+	return !os.IsNotExist(err)
+}
+
 // NewFileLogger -
 func NewFileLogger(logUntil loggingC.LogType, fileName string) loggingC.Logger {
-	f, err := os.Create(fileName)
+	var f *os.File
+	var err error
+
+	if !fileOrFolderExists(fileName) {
+		f, err = os.Create(fileName)
+	} else {
+		f, err = os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND, 0660)
+	}
 	if err != nil {
 		// return nil, err
 		fmt.Println(err)

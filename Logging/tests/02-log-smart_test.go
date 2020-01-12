@@ -22,7 +22,11 @@ func Test_02(t *testing.T) {
 		),
 	)
 
-	logging.Instance().LogInfo("Info line")
-	logging.Instance().LogWarning("Warning line")
+	logging.Instance().LogTrace("Trace line")
+	logging.Instance().LogPanic("Panic line")
+	logging.Instance().LogFatal("Fatal line")
 	logging.Instance().LogError("Error line")
+	logging.Instance().LogWarning("Warning line")
+	logging.Instance().LogInfo("Info line")
+	logging.Instance().LogDebug("Debug line")
 }
