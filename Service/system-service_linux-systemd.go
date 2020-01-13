@@ -10,9 +10,12 @@ import (
 	"strings"
 	"text/template"
 
-	helpersExec "github.com/codemodify/SystemKit/Helpers"
-	helpersUser "github.com/codemodify/SystemKit/Helpers"
 	logging "github.com/codemodify/SystemKit/Logging"
+	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
+
+	helpersExec "github.com/codemodify/SystemKit/Helpers"
+	helpersReflect "github.com/codemodify/SystemKit/Helpers"
+	helpersUser "github.com/codemodify/SystemKit/Helpers"
 )
 
 func runSystemCtlCommand(cmd string, label string) (out string, err error) {
@@ -26,7 +29,10 @@ func runSystemCtlCommand(cmd string, label string) (out string, err error) {
 		args = append(args, label)
 	}
 
-	logging.Instance().LogInfo(fmt.Sprint("running command: systemctl ", strings.Join(args, " ")))
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("running command: systemctl ", strings.Join(args, " ")),
+	})
 
 	return helpersExec.ExecWithArgs("systemctl", args...)
 }

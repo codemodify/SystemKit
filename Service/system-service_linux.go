@@ -38,11 +38,17 @@ func (thisRef LinuxService) Install(start bool) error {
 	path := unit.Path()
 	dir := filepath.Dir(path)
 
-	logging.Instance().LogInfo(fmt.Sprint("making sure folder exists: ", dir))
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("making sure folder exists: ", dir)),
+	})
 
 	os.MkdirAll(dir, os.ModePerm)
 
-	logging.Instance().LogInfo("generating unit file")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("generating unit file"),
+	})
 
 	content, err := unit.Generate()
 
@@ -50,7 +56,10 @@ func (thisRef LinuxService) Install(start bool) error {
 		return err
 	}
 
-	logging.Instance().LogInfo(fmt.Sprint("writing unit to: ", path))
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("writing unit to: ", path),
+	})
 
 	err = ioutil.WriteFile(path, []byte(content), 0644)
 
@@ -58,7 +67,10 @@ func (thisRef LinuxService) Install(start bool) error {
 		return err
 	}
 
-	logging.Instance().LogInfo(fmt.Sprint("wrote unit:\n", content))
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("wrote unit:", content),
+	})
 
 	if start {
 		err := thisRef.Start()
@@ -74,7 +86,10 @@ func (thisRef LinuxService) Install(start bool) error {
 func (thisRef LinuxService) Start() error {
 	unit := newSystemDFile(thisRef.command)
 
-	logging.Instance().LogInfo("loading unit file with systemd")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "loading unit file with systemd",
+	})
 
 	_, err := runSystemCtlCommand("start", unit.Label)
 
@@ -82,7 +97,10 @@ func (thisRef LinuxService) Start() error {
 		return err
 	}
 
-	logging.Instance().LogInfo("enabling unit file with systemd")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "enabling unit file with systemd",
+	})
 
 	_, err = runSystemCtlCommand("enable", unit.Label)
 
@@ -114,15 +132,20 @@ func (thisRef LinuxService) Restart() error {
 func (thisRef LinuxService) Stop() error {
 	unit := newSystemDFile(thisRef.command)
 
-	logging.Instance().LogInfo("reloading daemon")
-
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "reloading daemon",
+	})
 	_, err := runSystemCtlCommand("daemon-reload", "")
 
 	if err != nil {
 		return err
 	}
 
-	logging.Instance().LogInfo("stopping unit file with systemd")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "stopping unit file with systemd",
+	})
 
 	_, err = runSystemCtlCommand("stop", unit.Label)
 	// --force
@@ -132,19 +155,28 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfo("disabling unit file with systemd")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "disabling unit file with systemd",
+	})
 
 	_, err = runSystemCtlCommand("disable", unit.Label)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "Removed") {
-			logging.Instance().LogInfo("ignoring remove symlink error")
+			logging.Instance().LogInfoWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": "ignoring remove symlink error",
+			})
 			return nil
 		}
 		return err
 	}
 
-	logging.Instance().LogInfo("reloading daemon")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "reloading daemon",
+	})
 
 	_, err = runSystemCtlCommand("daemon-reload", "")
 
@@ -152,7 +184,10 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfo("running reset-failed")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "running reset-failed",
+	})
 
 	_, err = runSystemCtlCommand("reset-failed", "")
 
@@ -171,7 +206,10 @@ func (thisRef LinuxService) Uninstall() error {
 		return err
 	}
 
-	logging.Instance().LogInfo("remove unit file")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "remove unit file",
+	})
 
 	unit := newSystemDFile(thisRef.command)
 	err = unit.Remove()
