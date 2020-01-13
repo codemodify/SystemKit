@@ -100,7 +100,7 @@ Documentation={{ .Documentation }}
 
 [Service]
 ExecStart={{ .Executable }}
-WorkingDir={{ .WorkingDir }}
+WorkingDirectory={{ .WorkingDir }}
 Restart=on-failure
 Type=simple
 
