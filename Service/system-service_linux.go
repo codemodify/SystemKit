@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	helpersFiles "github.com/codemodify/SystemKit/Helpers"
+	helpersReflect "github.com/codemodify/SystemKit/Helpers"
 	logging "github.com/codemodify/SystemKit/Logging"
+	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
 // LinuxService - Represents Linux SystemD service
@@ -40,7 +42,7 @@ func (thisRef LinuxService) Install(start bool) error {
 
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("making sure folder exists: ", dir)),
+		"message": fmt.Sprint("making sure folder exists: ", dir),
 	})
 
 	os.MkdirAll(dir, os.ModePerm)
