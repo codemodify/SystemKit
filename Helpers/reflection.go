@@ -34,12 +34,37 @@ func GetThisFuncName() string {
 	return getFuncName(2)
 }
 
+// GetThisFuncNameSkip1 -
+func GetThisFuncNameSkip1() string {
+	return getFuncName(3)
+}
+
+// GetThisFuncNameSkip2 -
+func GetThisFuncNameSkip2() string {
+	return getFuncName(4)
+}
+
+// GetThisFuncNameSkip3 -
+func GetThisFuncNameSkip3() string {
+	return getFuncName(5)
+}
+
+// GetThisFuncNameSkip4 -
+func GetThisFuncNameSkip4() string {
+	return getFuncName(6)
+}
+
+// GetThisFuncNameSkip5 -
+func GetThisFuncNameSkip5() string {
+	return getFuncName(7)
+}
+
 // GetThisFuncNameWithLine -
 func GetThisFuncNameWithLine() string {
 	return fmt.Sprintf("%d : %s", getFuncName(2), GetLineNumber())
 }
 
-// GetStackTrace -
+// GetStackTrace2 -
 func GetStackTrace2(prefixToRemove string) string {
 
 	pc := make([]uintptr, 15)
