@@ -3,35 +3,54 @@
 package Service
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	helpersFiles "github.com/codemodify/SystemKit/Helpers"
+	helpersReflect "github.com/codemodify/SystemKit/Helpers"
+	logging "github.com/codemodify/SystemKit/Logging"
+	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
-/*
-Run is a no-op on Darwin based systems
-*/
-func (s *SystemService) Run() error {
+// MacOSService - Represents Mac OS Service service
+type MacOSService struct {
+	command ServiceCommand
+}
+
+// New -
+func New(command ServiceCommand) SystemService {
+	return &MacOSService{
+		command: command,
+	}
+}
+
+// Run - is a no-op on Mac based systems
+func (thisRef MacOSService) Run() error {
 	return nil
 }
 
-/*
-Install the system service. If start is passed, also starts
-the service.
-*/
-func (s *SystemService) Install(start bool) error {
-	plist := newPlist(s)
+// Install -
+func (thisRef MacOSService) Install(start bool) error {
+	plist := newPlist(thisRef.command)
 
 	path := plist.Path()
 	dir := filepath.Dir(path)
 
-	logger.Log("making sure folder exists: ", dir)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("making sure folder exists: ", dir),
+	})
 
 	os.MkdirAll(dir, os.ModePerm)
 
-	logger.Log("generating plist file")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("generating plist file"),
+	})
 
 	content, err := plist.Generate()
 
@@ -39,7 +58,10 @@ func (s *SystemService) Install(start bool) error {
 		return err
 	}
 
-	logger.Log("writing plist to: ", path)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("writing plist to: ", path),
+	})
 
 	err = ioutil.WriteFile(path, []byte(content), 0644)
 
@@ -47,10 +69,13 @@ func (s *SystemService) Install(start bool) error {
 		return err
 	}
 
-	logger.Log("wrote plist:\n", content)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("wrote plist: ", content),
+	})
 
 	if start {
-		err := s.Start()
+		err := thisRef.Start()
 		if err != nil {
 			return err
 		}
@@ -59,13 +84,14 @@ func (s *SystemService) Install(start bool) error {
 	return nil
 }
 
-/*
-Start the system service if it is installed
-*/
-func (s *SystemService) Start() error {
-	plist := newPlist(s)
+// Start -
+func (thisRef MacOSService) Start() error {
+	plist := newPlist(thisRef.command)
 
-	logger.Log("loading plist with launchctl")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("loading plist with launchctl"),
+	})
 
 	_, err := runLaunchCtlCommand("load", "-w", plist.Path())
 
@@ -74,9 +100,12 @@ func (s *SystemService) Start() error {
 
 		// If not installed, install the service and then run start again.
 		if strings.Contains(e, "no such file or directory") {
-			logger.Log("service not installed yet, installing...")
+			logging.Instance().LogInfoWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": fmt.Sprint("service not installed yet, installing..."),
+			})
 
-			err = s.Install(true)
+			err = thisRef.Install(true)
 
 			if err != nil {
 				return err
@@ -86,7 +115,10 @@ func (s *SystemService) Start() error {
 		// We don't care if the process fails because it is already
 		// loaded
 		if strings.Contains(e, "service already loaded") {
-			logger.Log("service already loaded")
+			logging.Instance().LogInfoWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": fmt.Sprint("service already loaded"),
+			})
 			return nil
 		}
 
@@ -96,17 +128,15 @@ func (s *SystemService) Start() error {
 	return nil
 }
 
-/*
-Restart attempts to stop the service if running then starts it again
-*/
-func (s *SystemService) Restart() error {
-	err := s.Stop()
+// Restart -
+func (thisRef MacOSService) Restart() error {
+	err := thisRef.Stop()
 
 	if err != nil {
 		return err
 	}
 
-	err = s.Start()
+	err = thisRef.Start()
 
 	if err != nil {
 		return err
@@ -115,11 +145,9 @@ func (s *SystemService) Restart() error {
 	return nil
 }
 
-/*
-Stop stops the system service by unloading the plist file
-*/
-func (s *SystemService) Stop() error {
-	plist := newPlist(s)
+// Stop -
+func (thisRef MacOSService) Stop() error {
+	plist := newPlist(thisRef.command)
 
 	_, err := runLaunchCtlCommand("unload", "-w", plist.Path())
 
@@ -127,12 +155,18 @@ func (s *SystemService) Stop() error {
 		e := strings.ToLower(err.Error())
 
 		if strings.Contains(e, "could not find specified service") {
-			logger.Log("no service matching plist running: ", plist.Label)
+			logging.Instance().LogInfoWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": fmt.Sprint("no service matching plist running: ", plist.Label),
+			})
 			return nil
 		}
 
 		if strings.Contains(e, "no such file or directory") {
-			logger.Log("plist file doesn't exist, nothing to stop: ", plist.Label)
+			logging.Instance().LogInfoWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": fmt.Sprint("plist file doesn't exist, nothing to stop: ", plist.Label),
+			})
 			return nil
 		}
 
@@ -142,12 +176,9 @@ func (s *SystemService) Stop() error {
 	return nil
 }
 
-/*
-Uninstall the system service by first stopping it then removing
-the plist file.
-*/
-func (s *SystemService) Uninstall() error {
-	err := s.Stop()
+// Uninstall -
+func (thisRef MacOSService) Uninstall() error {
+	err := thisRef.Stop()
 
 	if err != nil {
 		// If there is no matching process, don't throw an error
@@ -157,9 +188,12 @@ func (s *SystemService) Uninstall() error {
 		}
 	}
 
-	plist := newPlist(s)
+	plist := newPlist(thisRef.command)
 
-	logger.Log("remove plist file")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("remove plist file"),
+	})
 
 	err = os.Remove(plist.Path())
 
@@ -174,18 +208,19 @@ func (s *SystemService) Uninstall() error {
 	return nil
 }
 
-/*
-Status returns whether or not the system service is running
-*/
-func (s *SystemService) Status() (status *ServiceStatus, err error) {
-	plist := newPlist(s)
+// Status -
+func (thisRef MacOSService) Status() (ServiceStatus, error) {
+	plist := newPlist(thisRef.command)
 
 	list, err := runLaunchCtlCommand("list")
 
-	status = &ServiceStatus{}
+	status := ServiceStatus{}
 
 	if err != nil {
-		logger.Log("error getting launchctl status: ", err)
+		logging.Instance().LogInfoWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error getting launchctl status: ", err),
+		})
 		return status, err
 	}
 
@@ -223,11 +258,9 @@ func (s *SystemService) Status() (status *ServiceStatus, err error) {
 	return status, nil
 }
 
-/*
-Return whether or not the plist file eixts
-*/
-func (s *SystemService) Exists() bool {
-	plist := newPlist(s)
+// Exists -
+func (thisRef MacOSService) Exists() bool {
+	plist := newPlist(thisRef.command)
 
-	return fileExists(plist.Path())
+	return helpersFiles.FileOrFolderExists(plist.Path())
 }

@@ -6,12 +6,11 @@ import (
 	"bytes"
 	"path/filepath"
 	"text/template"
+
+	helpersUser "github.com/codemodify/SystemKit/Helpers"
 )
 
-/*
-plist represents a launchctl plist file
-*/
-type plist struct {
+type pListFile struct {
 	Label            string
 	Program          string
 	ProgramArguments []string
@@ -21,62 +20,54 @@ type plist struct {
 	StdErrPath       string
 }
 
-func newPlist(serv *SystemService) plist {
-	label := serv.Command.Label
-	name := serv.Command.Name
-	logDir := filepath.Join(homeDir(), "Library/Logs", name)
-	if isRoot() {
-		logDir = filepath.Join("/Library/Logs", name)
+func newPlist(command ServiceCommand) pListFile {
+	logDir := filepath.Join(helpersUser.HomeDir(""), "Library/Logs", command.Name)
+	if helpersUser.IsRoot() {
+		logDir = filepath.Join("/Library/Logs", command.Name)
 	}
-	args := []string{serv.Command.Program}
-	if len(serv.Command.Args) != 0 {
-		args = append(args, serv.Command.Args...)
+	args := []string{command.Executable}
+	if len(command.Args) != 0 {
+		args = append(args, command.Args...)
 	}
 
-	pl := plist{
-		Label:            label,
+	pl := pListFile{
+		Label:            command.DisplayLabel,
 		ProgramArguments: args,
 		KeepAlive:        true,
 		RunAtLoad:        true,
-		StdOutPath:       filepath.Join(logDir, name+".stdout.log"),
-		StdErrPath:       filepath.Join(logDir, name+".stderr.log"),
+		StdOutPath:       filepath.Join(logDir, command.Name+".stdout.log"),
+		StdErrPath:       filepath.Join(logDir, command.Name+".stderr.log"),
 	}
 
 	return pl
 }
 
-// TODO: Convert to io.Writer?
-func (p *plist) Generate() (string, error) {
+// Generate -
+func (thisRef pListFile) Generate() (string, error) {
 	var tmpl bytes.Buffer
 	t := template.Must(template.New("launchdConfig").Parse(plistTemplate()))
-	if err := t.Execute(&tmpl, p); err != nil {
+	if err := t.Execute(&tmpl, thisRef); err != nil {
 		return "", err
 	}
 
 	return tmpl.String(), nil
 }
 
-func (p *plist) Path() string {
-	label := p.Label + ".plist"
-	if isRoot() {
+// Path -
+func (thisRef pListFile) Path() string {
+	label := thisRef.Label + ".pListFile"
+	if helpersUser.IsRoot() {
 		return filepath.Join("/Library/LaunchDaemons/", label)
 	}
 
-	return filepath.Join(homeDir(), "Library/LaunchAgents/", label)
+	return filepath.Join(helpersUser.HomeDir(""), "Library/LaunchAgents/", label)
 }
 
-// func (p *plist) String() string {
-// 	encoded, _ := xml.MarshalIndent(p, "", "  ")
-// 	return string(encoded)
-// }
-
-/*
-plistTemplate generates the contents of the plist file.
-*/
+// plistTemplate - generates the contents of the pListFile file
 func plistTemplate() string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\" >
-<plist version='1.0'>
+<!DOCTYPE pListFile PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\" >
+<pListFile version='1.0'>
   <dict>
     <key>Label</key><string>{{ .Label }}</string>{{ if .Program }}
     <key>Program</key><string>{{ .Program }}</string>{{ end }}
@@ -91,6 +82,6 @@ func plistTemplate() string {
     <key>KeepAlive</key> <{{ .KeepAlive }}/>
     <key>RunAtLoad</key> <{{ .RunAtLoad }}/>
   </dict>
-</plist>
+</pListFile>
 `
 }
