@@ -193,7 +193,6 @@ func (thisRef MacOSService) Stop() error {
 // Uninstall -
 func (thisRef MacOSService) Uninstall() error {
 	err := thisRef.Stop()
-
 	if err != nil {
 		// If there is no matching process, don't throw an error
 		// as it is already stopped.
@@ -206,14 +205,28 @@ func (thisRef MacOSService) Uninstall() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("remove plist file"),
 	})
-
 	err = os.Remove(thisRef.FilePath())
-
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "no such file or directory") {
 			return nil
 		}
 
+		return err
+	}
+
+	// sudo launchctl
+	cmd := "launchctl"
+	args := []string{"remove", thisRef.command.Name}
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
+	})
+	_, err = helpersExec.ExecWithArgs(cmd, args...)
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error getting launchctl status: ", err),
+		})
 		return err
 	}
 
@@ -230,7 +243,7 @@ func (thisRef MacOSService) Status() (ServiceStatus, error) {
 	})
 	list, err := helpersExec.ExecWithArgs(cmd, args...)
 	if err != nil {
-		logging.Instance().LogInfoWithFields(loggingC.Fields{
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
 			"message": fmt.Sprint("error getting launchctl status: ", err),
 		})
