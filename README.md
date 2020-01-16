@@ -1,5 +1,3 @@
-# Runs On
-
 # SystemKit
 [![GoDoc](https://godoc.org/github.com/codemodify/SystemKit?status.svg)](https://godoc.org/github.com/codemodify/SystemKit) 
 [![0-License](https://img.shields.io/badge/license-0--license-brightgreen)](https://github.com/codemodify/TheFreeLicense)
@@ -12,4 +10,7 @@ Is a set of carefully cherry picked approaches to have stable framework to write
 See samples or readme for each folder
 
 # Runs On
-    
+![](https://img.icons8.com/ios-filled/50/000000/linux.png)
+![](https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png)
+![](https://img.icons8.com/ios-filled/50/000000/mac-os.png)
+![](https://img.icons8.com/ios-filled/50/000000/windows-logo.png)
