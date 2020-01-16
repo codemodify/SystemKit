@@ -12,18 +12,28 @@ type SystemService interface {
 	Uninstall() error
 	Status() (ServiceStatus, error)
 	Exists() bool
+	FilePath() string
+	FileContent() ([]byte, error)
 }
 
-// ServiceCommand - what to execute as service
+// ServiceCommand - What to execute as service
+// These fields are a "common sense" mix of fields from SystemD and LaunchD.
+// Some may be ignored on one or other platform but the implemetnation will
+// try the max possible to respect the requested
 type ServiceCommand struct {
-	Name          string
-	DisplayLabel  string
-	Executable    string
-	WorkingDir    string
-	Args          []string
-	Description   string
-	Documentation string // URL to your service documentation.
-	Debug         bool   // Whether or not to turn on debug behavior
+	Name                string // usually this will be the file name
+	DisplayLabel        string
+	Description         string
+	DocumentationURL    string
+	Executable          string
+	Args                []string
+	WorkingDirectory    string
+	Debug               bool
+	KeepAlive           bool
+	RunAtLoad           bool
+	StdOutPath          string
+	StdErrPath          string
+	StartDelayInSeconds int
 }
 
 func (thisRef ServiceCommand) String() string {

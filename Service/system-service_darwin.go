@@ -3,15 +3,19 @@
 package Service
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/template"
 
+	helpersExec "github.com/codemodify/SystemKit/Helpers"
 	helpersFiles "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
+	helpersUser "github.com/codemodify/SystemKit/Helpers"
 	logging "github.com/codemodify/SystemKit/Logging"
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
@@ -23,6 +27,24 @@ type MacOSService struct {
 
 // New -
 func New(command ServiceCommand) SystemService {
+	// override some values - platform specific
+	// https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
+	logDir := filepath.Join(helpersUser.HomeDir(""), "Library/Logs", command.Name)
+	if helpersUser.IsRoot() {
+		logDir = filepath.Join("/Library/Logs", command.Name)
+	}
+
+	// args := []string{command.Executable}
+	// if len(command.Args) != 0 {
+	// 	args = append(args, command.Args...)
+	// }
+	// command.Args = args
+
+	command.KeepAlive = true
+	command.RunAtLoad = true
+	command.StdOutPath = filepath.Join(logDir, command.Name+".stdout.log")
+	command.StdErrPath = filepath.Join(logDir, command.Name+".stderr.log")
+
 	return &MacOSService{
 		command: command,
 	}
@@ -35,44 +57,30 @@ func (thisRef MacOSService) Run() error {
 
 // Install -
 func (thisRef MacOSService) Install(start bool) error {
-	plist := newPlist(thisRef.command)
-
-	path := plist.Path()
-	dir := filepath.Dir(path)
-
+	dir := filepath.Dir(thisRef.FilePath())
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("making sure folder exists: ", dir),
 	})
-
 	os.MkdirAll(dir, os.ModePerm)
 
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("generating plist file"),
 	})
-
-	content, err := plist.Generate()
-
+	fileContent, err := thisRef.FileContent()
 	if err != nil {
 		return err
 	}
 
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("writing plist to: ", path),
+		"message": fmt.Sprint("writing plist to: ", thisRef.FilePath()),
 	})
-
-	err = ioutil.WriteFile(path, []byte(content), 0644)
-
+	err = ioutil.WriteFile(thisRef.FilePath(), fileContent, 0644)
 	if err != nil {
 		return err
 	}
-
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("wrote plist: ", content),
-	})
 
 	if start {
 		err := thisRef.Start()
@@ -86,15 +94,18 @@ func (thisRef MacOSService) Install(start bool) error {
 
 // Start -
 func (thisRef MacOSService) Start() error {
-	plist := newPlist(thisRef.command)
-
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("loading plist with launchctl"),
 	})
 
-	_, err := runLaunchCtlCommand("load", "-w", plist.Path())
-
+	cmd := "launchctl"
+	args := []string{"load", "-w", thisRef.FilePath()}
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
+	})
+	_, err := helpersExec.ExecWithArgs(cmd, args...)
 	if err != nil {
 		e := strings.ToLower(err.Error())
 
@@ -147,17 +158,20 @@ func (thisRef MacOSService) Restart() error {
 
 // Stop -
 func (thisRef MacOSService) Stop() error {
-	plist := newPlist(thisRef.command)
-
-	_, err := runLaunchCtlCommand("unload", "-w", plist.Path())
-
+	cmd := "launchctl"
+	args := []string{"unload", "-w", thisRef.FilePath()}
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
+	})
+	_, err := helpersExec.ExecWithArgs(cmd, args...)
 	if err != nil {
 		e := strings.ToLower(err.Error())
 
 		if strings.Contains(e, "could not find specified service") {
 			logging.Instance().LogInfoWithFields(loggingC.Fields{
 				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("no service matching plist running: ", plist.Label),
+				"message": fmt.Sprint("no service matching plist running: ", thisRef.command.DisplayLabel),
 			})
 			return nil
 		}
@@ -165,7 +179,7 @@ func (thisRef MacOSService) Stop() error {
 		if strings.Contains(e, "no such file or directory") {
 			logging.Instance().LogInfoWithFields(loggingC.Fields{
 				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("plist file doesn't exist, nothing to stop: ", plist.Label),
+				"message": fmt.Sprint("plist file doesn't exist, nothing to stop: ", thisRef.command.DisplayLabel),
 			})
 			return nil
 		}
@@ -188,14 +202,12 @@ func (thisRef MacOSService) Uninstall() error {
 		}
 	}
 
-	plist := newPlist(thisRef.command)
-
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("remove plist file"),
 	})
 
-	err = os.Remove(plist.Path())
+	err = os.Remove(thisRef.FilePath())
 
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "no such file or directory") {
@@ -210,28 +222,27 @@ func (thisRef MacOSService) Uninstall() error {
 
 // Status -
 func (thisRef MacOSService) Status() (ServiceStatus, error) {
-	plist := newPlist(thisRef.command)
-
-	list, err := runLaunchCtlCommand("list")
-
-	status := ServiceStatus{}
-
+	cmd := "launchctl"
+	args := []string{"list"}
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
+	})
+	list, err := helpersExec.ExecWithArgs(cmd, args...)
 	if err != nil {
 		logging.Instance().LogInfoWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
 			"message": fmt.Sprint("error getting launchctl status: ", err),
 		})
-		return status, err
+		return ServiceStatus{}, err
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(list)), "\n")
-	pattern := plist.Label
-
-	if pattern == "" {
-		return status, err
+	if thisRef.command.DisplayLabel == "" {
+		return ServiceStatus{}, err
 	}
 
-	// logger.Log("running services:")
+	status := ServiceStatus{}
 
 	for _, line := range lines {
 
@@ -239,7 +250,7 @@ func (thisRef MacOSService) Status() (ServiceStatus, error) {
 
 		chunks := strings.Split(line, "\t")
 
-		if chunks[2] == pattern {
+		if chunks[2] == thisRef.command.DisplayLabel {
 			if chunks[0] != "-" {
 				pid, err := strconv.Atoi(chunks[0])
 
@@ -260,7 +271,59 @@ func (thisRef MacOSService) Status() (ServiceStatus, error) {
 
 // Exists -
 func (thisRef MacOSService) Exists() bool {
-	plist := newPlist(thisRef.command)
+	return helpersFiles.FileOrFolderExists(thisRef.FilePath())
+}
 
-	return helpersFiles.FileOrFolderExists(plist.Path())
+// FilePath -
+func (thisRef MacOSService) FilePath() string {
+	if helpersUser.IsRoot() {
+		return filepath.Join("/Library/LaunchDaemons", thisRef.command.Name+".plist")
+	}
+
+	return filepath.Join(helpersUser.HomeDir(""), "Library/LaunchAgents", thisRef.command.Name+".plist")
+}
+
+// FileContent -
+func (thisRef MacOSService) FileContent() ([]byte, error) {
+	plistTemplate := template.Must(template.New("launchdConfig").Parse(
+		`<?xml version='1.0' encoding='UTF-8'?>
+		<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\" >
+		<plist version='1.0'>
+			<dict>
+				<key>Label</key>
+				<string>{{ .DisplayLabel }}</string>
+
+				{{ if .Executable }}
+				<key>Program</key>
+				<string>{{ .Executable }}</string>
+				{{ end }}
+
+				{{ if .Args }}
+				<key>ProgramArguments</key>
+				<array>{{ range $arg := .Args }}
+					<string>{{ $arg }}</string>{{ end }}
+				</array>
+				{{ end }}
+
+				<key>StandardOutPath</key>
+				<string>{{ .StdOutPath }}</string>
+
+				<key>StandardErrorPath</key>
+				<string>{{ .StdErrPath }}</string>
+
+				<key>KeepAlive</key> <{{ .KeepAlive }}/>
+				<key>RunAtLoad</key> <{{ .RunAtLoad }}/>
+
+				<key>WorkingDirectory</key>
+				<string>/</string>
+			</dict>
+		</plist>
+		`))
+
+	var plistTemplateBytes bytes.Buffer
+	if err := plistTemplate.Execute(&plistTemplateBytes, thisRef.command); err != nil {
+		return nil, err
+	}
+
+	return plistTemplateBytes.Bytes(), nil
 }
