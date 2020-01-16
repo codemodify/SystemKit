@@ -1,7 +1,5 @@
 package Service
 
-import "strings"
-
 // SystemService - represents a generic system service configuration
 type SystemService interface {
 	Run() error
@@ -34,16 +32,8 @@ type ServiceCommand struct {
 	StdOutPath          string
 	StdErrPath          string
 	StartDelayInSeconds int
-}
-
-func (thisRef ServiceCommand) String() string {
-	val := thisRef.Executable
-
-	if len(thisRef.Args) > 0 {
-		val = val + " " + strings.Join(thisRef.Args, " ")
-	}
-
-	return val
+	RunAsUser           string
+	RunAsGroup          string
 }
 
 // ServiceStatus is a generic representation of the service running on the system

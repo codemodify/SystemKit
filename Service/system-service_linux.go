@@ -3,15 +3,19 @@
 package Service
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/template"
 
+	helpersExec "github.com/codemodify/SystemKit/Helpers"
 	helpersFiles "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
+	helpersUser "github.com/codemodify/SystemKit/Helpers"
 	logging "github.com/codemodify/SystemKit/Logging"
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
@@ -35,9 +39,7 @@ func (thisRef LinuxService) Run() error {
 
 // Install -
 func (thisRef LinuxService) Install(start bool) error {
-	unit := newSystemDFile(thisRef.command)
-
-	path := unit.Path()
+	path := thisRef.FilePath()
 	dir := filepath.Dir(path)
 
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
@@ -52,7 +54,7 @@ func (thisRef LinuxService) Install(start bool) error {
 		"message": fmt.Sprint("generating unit file"),
 	})
 
-	content, err := unit.Generate()
+	content, err := thisRef.FileContent()
 
 	if err != nil {
 		return err
@@ -63,7 +65,7 @@ func (thisRef LinuxService) Install(start bool) error {
 		"message": fmt.Sprint("writing unit to: ", path),
 	})
 
-	err = ioutil.WriteFile(path, []byte(content), 0644)
+	err = ioutil.WriteFile(path, content, 0644)
 
 	if err != nil {
 		return err
@@ -86,15 +88,12 @@ func (thisRef LinuxService) Install(start bool) error {
 
 // Start -
 func (thisRef LinuxService) Start() error {
-	unit := newSystemDFile(thisRef.command)
-
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "loading unit file with systemd",
 	})
 
-	_, err := runSystemCtlCommand("start", unit.Label)
-
+	_, err := runSystemCtlCommand("start", thisRef.command.Name)
 	if err != nil {
 		return err
 	}
@@ -104,8 +103,7 @@ func (thisRef LinuxService) Start() error {
 		"message": "enabling unit file with systemd",
 	})
 
-	_, err = runSystemCtlCommand("enable", unit.Label)
-
+	_, err = runSystemCtlCommand("enable", thisRef.command.Name)
 	if err != nil {
 		e := err.Error()
 		if strings.Contains(e, "Created symlink") {
@@ -119,10 +117,7 @@ func (thisRef LinuxService) Start() error {
 
 // Restart -
 func (thisRef LinuxService) Restart() error {
-	unit := newSystemDFile(thisRef.command)
-
-	_, err := runSystemCtlCommand("reload-or-restart", unit.Label)
-
+	_, err := runSystemCtlCommand("reload-or-restart", thisRef.command.Name)
 	if err != nil {
 		return err
 	}
@@ -132,14 +127,11 @@ func (thisRef LinuxService) Restart() error {
 
 // Stop -
 func (thisRef LinuxService) Stop() error {
-	unit := newSystemDFile(thisRef.command)
-
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
 	_, err := runSystemCtlCommand("daemon-reload", "")
-
 	if err != nil {
 		return err
 	}
@@ -148,11 +140,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "stopping unit file with systemd",
 	})
-
-	_, err = runSystemCtlCommand("stop", unit.Label)
-	// --force
-	// --now
-
+	_, err = runSystemCtlCommand("stop", thisRef.command.Name)
 	if err != nil {
 		return err
 	}
@@ -161,9 +149,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "disabling unit file with systemd",
 	})
-
-	_, err = runSystemCtlCommand("disable", unit.Label)
-
+	_, err = runSystemCtlCommand("disable", thisRef.command.Name)
 	if err != nil {
 		if strings.Contains(err.Error(), "Removed") {
 			logging.Instance().LogInfoWithFields(loggingC.Fields{
@@ -179,9 +165,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
-
 	_, err = runSystemCtlCommand("daemon-reload", "")
-
 	if err != nil {
 		return err
 	}
@@ -190,9 +174,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "running reset-failed",
 	})
-
 	_, err = runSystemCtlCommand("reset-failed", "")
-
 	if err != nil {
 		return err
 	}
@@ -203,7 +185,6 @@ func (thisRef LinuxService) Stop() error {
 // Uninstall -
 func (thisRef LinuxService) Uninstall() error {
 	err := thisRef.Stop()
-
 	if err != nil {
 		return err
 	}
@@ -212,10 +193,7 @@ func (thisRef LinuxService) Uninstall() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "remove unit file",
 	})
-
-	unit := newSystemDFile(thisRef.command)
-	err = unit.Remove()
-
+	err = os.Remove(thisRef.FilePath())
 	if err != nil {
 		return err
 	}
@@ -225,8 +203,7 @@ func (thisRef LinuxService) Uninstall() error {
 
 // Status -
 func (thisRef LinuxService) Status() (ServiceStatus, error) {
-	unit := newSystemDFile(thisRef.command)
-	active, _ := runSystemCtlCommand("is-active", unit.Label)
+	active, _ := runSystemCtlCommand("is-active", thisRef.command.Name)
 
 	status := ServiceStatus{}
 
@@ -235,7 +212,7 @@ func (thisRef LinuxService) Status() (ServiceStatus, error) {
 		return status, nil
 	}
 
-	stat, _ := runSystemCtlCommand("status", unit.Label)
+	stat, _ := runSystemCtlCommand("status", thisRef.command.Name)
 
 	// Get the PID from the status output
 	lines := strings.Split(stat, "\n")
@@ -256,6 +233,76 @@ func (thisRef LinuxService) Status() (ServiceStatus, error) {
 
 // Exists -
 func (thisRef LinuxService) Exists() bool {
-	unit := newSystemDFile(thisRef.command)
-	return helpersFiles.FileOrFolderExists(unit.Path())
+	return helpersFiles.FileOrFolderExists(thisRef.FilePath())
+}
+
+// FilePath -
+func (thisRef LinuxService) FilePath() string {
+	if helpersUser.IsRoot() {
+		return filepath.Join("/etc/systemd/system", thisRef.command.Name+".service")
+	}
+
+	return filepath.Join(helpersUser.HomeDir(""), ".config/systemd/user", thisRef.command.Name+".service")
+}
+
+// FileContent -
+func (thisRef LinuxService) FileContent() ([]byte, error) {
+	transformedCommand := transformCommandForSaveToDisk(thisRef.command)
+
+	systemDServiceFileTemplate := template.Must(template.New("systemDFile").Parse(
+		`[Unit]
+		After=network.target
+		Description={{ .Description }}
+		Documentation={{ .DocumentationURL }}
+		
+		[Service]
+		ExecStart={{ .Executable }}
+		WorkingDirectory={{ .WorkingDirectory }}
+		Restart=on-failure
+		Type=simple
+
+		{{ if .RunAsUser }}
+		User={{ .RunAsUser }}
+		{{ end }}
+		{{ if .RunAsGroup }}
+		Group={{ .RunAsGroup }}
+		{{ end }}
+		
+		[Install]
+		WantedBy=multi-user.target
+	`))
+
+	var systemDServiceFileTemplateAsBytes bytes.Buffer
+	if err := systemDServiceFileTemplate.Execute(&systemDServiceFileTemplateAsBytes, transformedCommand); err != nil {
+		return nil, err
+	}
+
+	return systemDServiceFileTemplateAsBytes.Bytes(), nil
+}
+
+func runSystemCtlCommand(cmd string, label string) (out string, err error) {
+	args := strings.Split(cmd, " ")
+
+	if !helpersUser.IsRoot() {
+		args = append(args, "--user")
+	}
+
+	if label != "" {
+		args = append(args, label)
+	}
+
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("running command: systemctl ", strings.Join(args, " ")),
+	})
+
+	return helpersExec.ExecWithArgs("systemctl", args...)
+}
+
+func transformCommandForSaveToDisk(command ServiceCommand) ServiceCommand {
+	if len(command.Args) > 0 {
+		command.Executable = fmt.Sprintf("%s %s", command.Executable, strings.Join(command.Args, " "))
+	}
+
+	return command
 }
