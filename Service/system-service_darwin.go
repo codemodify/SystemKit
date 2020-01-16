@@ -328,7 +328,7 @@ func (thisRef MacOSService) FileContent() ([]byte, error) {
 				<key>RunAtLoad</key> <{{ .RunAtLoad }}/>
 
 				<key>WorkingDirectory</key>
-				<string>/</string>
+				<string>{{ .WorkingDirectory }}</string>
 			</dict>
 		</plist>
 		`))
