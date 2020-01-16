@@ -34,12 +34,7 @@ func New(command ServiceCommand) SystemService {
 		logDir = filepath.Join("/Library/Logs", command.Name)
 	}
 
-	// args := []string{command.Executable}
-	// if len(command.Args) != 0 {
-	// 	args = append(args, command.Args...)
-	// }
-	// command.Args = args
-
+	command.Args = append([]string{command.Executable}, command.Args...)
 	command.KeepAlive = true
 	command.RunAtLoad = true
 	command.StdOutPath = filepath.Join(logDir, command.Name+".stdout.log")
@@ -306,17 +301,10 @@ func (thisRef MacOSService) FileContent() ([]byte, error) {
 				<key>Label</key>
 				<string>{{ .DisplayLabel }}</string>
 
-				{{ if .Executable }}
-				<key>Program</key>
-				<string>{{ .Executable }}</string>
-				{{ end }}
-
-				{{ if .Args }}
 				<key>ProgramArguments</key>
 				<array>{{ range $arg := .Args }}
 					<string>{{ $arg }}</string>{{ end }}
 				</array>
-				{{ end }}
 
 				<key>StandardOutPath</key>
 				<string>{{ .StdOutPath }}</string>
