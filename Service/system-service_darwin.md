@@ -1,8 +1,16 @@
 # On OS X
 - `launchd` is used
-- service files is stored under `/Library/LaunchDaemons`
+- service files is stored under 
+    - `/Library/LaunchDaemons`
+    - OR 
+    - `~/Library/LaunchAgents`
+- log files are stored under
+    - `/Library/Logs`
+    - OR
+    - `~/Library/Logs`
 - helpers
     - `sudo launchctl stop SERVICE`
     - `sudo launchctl start SERVICE`
     - `sudo launchctl list | grep SERVICE`
+    - `tail -f *`
     - `syslog -w`
