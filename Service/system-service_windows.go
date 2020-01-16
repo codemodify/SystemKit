@@ -14,11 +14,20 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
-/*
-Run is the process which gets fired when the service starts up
-when the service is installed and started.
-*/
-func (s *SystemService) Run() error {
+// WindowsService - Represents Windows service
+type WindowsService struct {
+	command ServiceCommand
+}
+
+// New -
+func New(command ServiceCommand) SystemService {
+	return &WindowsService{
+		command: command,
+	}
+}
+
+// Run -
+func (thisRef WindowsService) Run() error {
 	logger.Log("running service")
 
 	name := s.Command.Name
@@ -61,11 +70,8 @@ func (s *SystemService) Run() error {
 	return nil
 }
 
-/*
-Install the system service. If start is passed, also starts
-the service.
-*/
-func (s *SystemService) Install(start bool) error {
+// Install -
+func (thisRef WindowsService) Install(start bool) error {
 	name := s.Command.Name
 	exePath := s.Command.Program
 	args := s.Command.Args
@@ -125,40 +131,38 @@ func (s *SystemService) Install(start bool) error {
 	}
 
 	return nil
-
-	// logger.Log("install service")
-
-	// name := s.Command.Name
-	// prog := s.Command.String()
-	// args := []string{
-	// 	"create",
-	// 	fmt.Sprintf("\"%s\"", name),
-	// 	"binPath=",
-	// 	fmt.Sprintf("\"%s\"", prog),
-	// 	// "start=",
-	// 	// "boot",
-	// }
-
-	// out, err := runScCommand(args...)
-
-	// if err != nil {
-	// 	if strings.Contains(err.Error(), "exit status 1073") {
-	// 		logger.Log("service already exists")
-	// 	} else {
-	// 		logger.Log("sc create output:\n", out)
-	// 		return err
-	// 	}
-	// }
-
-	// // if strings.Contains(out, "SUCCESS") {
-	// // 	return nil
-	// // }
 }
 
-/*
-Start the system service if it is installed
-*/
-func (s *SystemService) Start() error {
+// logger.Log("install service")
+
+// name := s.Command.Name
+// prog := s.Command.String()
+// args := []string{
+// 	"create",
+// 	fmt.Sprintf("\"%s\"", name),
+// 	"binPath=",
+// 	fmt.Sprintf("\"%s\"", prog),
+// 	// "start=",
+// 	// "boot",
+// }
+
+// out, err := runScCommand(args...)
+
+// if err != nil {
+// 	if strings.Contains(err.Error(), "exit status 1073") {
+// 		logger.Log("service already exists")
+// 	} else {
+// 		logger.Log("sc create output:\n", out)
+// 		return err
+// 	}
+// }
+
+// // if strings.Contains(out, "SUCCESS") {
+// // 	return nil
+// // }
+
+// Start - 
+func (thisRef WindowsService) Start() error {
 	name := s.Command.Name
 
 	logger.Log("starting system service: ", name)
@@ -192,20 +196,19 @@ func (s *SystemService) Start() error {
 	logger.Log("running service")
 
 	return nil
-	// _, err := runScCommand("start", fmt.Sprintf("\"%s\"", s.Command.Name))
-
-	// if err != nil {
-	// 	logger.Log("start service error: ", err)
-	// 	return err
-	// }
-
-	// return nil
 }
 
-/*
-Restart attempts to stop the service if running then starts it again
-*/
-func (s *SystemService) Restart() error {
+// _, err := runScCommand("start", fmt.Sprintf("\"%s\"", s.Command.Name))
+
+// if err != nil {
+// 	logger.Log("start service error: ", err)
+// 	return err
+// }
+
+// return nil
+
+// Restart -
+func (thisRef WindowsService) Restart() error {
 	if err := s.Stop(); err != nil {
 		return err
 	}
@@ -217,10 +220,8 @@ func (s *SystemService) Restart() error {
 	return nil
 }
 
-/*
-Stop stops the system service by unloading the unit file
-*/
-func (s *SystemService) Stop() error {
+// Stop -
+func (thisRef WindowsService) Stop() error {
 	err := s.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
@@ -264,26 +265,23 @@ func (s *SystemService) Stop() error {
 	}
 
 	return nil
-	// _, err := runScCommand("stop", fmt.Sprintf("\"%s\"", s.Command.Name))
-
-	// if err != nil {
-	// 	logger.Log("stop service error: ", err)
-
-	// 	if strings.Contains(err.Error(), "exit status 1062") {
-	// 		logger.Log("service already stopped")
-	// 	} else {
-	// 		return err
-	// 	}
-	// }
-
-	// return nil
 }
+// _, err := runScCommand("stop", fmt.Sprintf("\"%s\"", s.Command.Name))
 
-/*
-Uninstall the system service by first stopping it then removing
-the unit file.
-*/
-func (s *SystemService) Uninstall() error {
+// if err != nil {
+// 	logger.Log("stop service error: ", err)
+
+// 	if strings.Contains(err.Error(), "exit status 1062") {
+// 		logger.Log("service already stopped")
+// 	} else {
+// 		return err
+// 	}
+// }
+
+// return nil
+
+// Uninstall -
+func (thisRef WindowsService) Uninstall() error {
 	name := s.Command.Name
 
 	// Connect to Windows service manager
@@ -317,28 +315,26 @@ func (s *SystemService) Uninstall() error {
 	}
 
 	return nil
-	// name := s.Command.Name
-
-	// err := s.Stop()
-
-	// if err != nil {
-	// 	return err
-	// }
-
-	// _, err = runScCommand("delete", fmt.Sprintf("\"%s\"", name))
-
-	// if err != nil {
-	// 	logger.Log("delete service error: ", err)
-	// 	return err
-	// }
-
-	// return nil
 }
+// name := s.Command.Name
 
-/*
-Status returns whether or not the system service is running
-*/
-func (s *SystemService) Status() (status *ServiceStatus, err error) {
+// err := s.Stop()
+
+// if err != nil {
+// 	return err
+// }
+
+// _, err = runScCommand("delete", fmt.Sprintf("\"%s\"", name))
+
+// if err != nil {
+// 	logger.Log("delete service error: ", err)
+// 	return err
+// }
+
+// return nil
+
+// Status -
+func (thisRef WindowsService) Status() (status *ServiceStatus, err error) {
 	name := s.Command.Name
 	status = &ServiceStatus{}
 
@@ -372,13 +368,12 @@ func (s *SystemService) Status() (status *ServiceStatus, err error) {
 
 	status.PID = int(stat.ProcessId)
 	status.Running = stat.State == svc.Running
+
 	return status, nil
 }
 
-/*
-Return whether or not the unit file eixts
-*/
-func (s *SystemService) Exists() bool {
+// Exists -
+func (thisRef WindowsService) Exists() bool {
 	_, err := runScCommand("queryex", fmt.Sprintf("\"%s\"", s.Command.Name))
 
 	if err != nil {
@@ -393,7 +388,16 @@ func (s *SystemService) Exists() bool {
 	return true
 }
 
-func (s *SystemService) control(command svc.Cmd, state svc.State) error {
+// FilePath -
+func (thisRef LinuxService) FilePath() string {
+	return ""
+}
+
+func (thisRef LinuxService) FileContent() ([]byte, error) {
+	return []byte{}, nil
+}
+
+func (thisRef WindowsService) control(command svc.Cmd, state svc.State) error {
 	name := s.Command.Name
 
 	m, err := mgr.Connect()
@@ -514,3 +518,91 @@ func (s *SystemService) control(command svc.Cmd, state svc.State) error {
 // logger.Logf("service: %+v", serv)
 
 // pid := getPID(name)
+
+/*
+connectService connects to a Window service by name and
+returns the service or an error
+*/
+func connectService(name string) (s *mgr.Service, err error) {
+	m, err := mgr.Connect()
+
+	if err != nil {
+		logger.Log("open manager error: ", err)
+		return nil, err
+	}
+
+	s, err = m.OpenService(name)
+
+	if err != nil {
+		e := err.Error()
+		logger.Log("open manager error: ", e)
+
+		if strings.Contains(e, "specified service does not exist") {
+			return nil, &ServiceDoesNotExistError{serviceName: name}
+		}
+
+		return nil, err
+	}
+
+	// defer s.Close()
+
+	return s, nil
+}
+
+/*
+runScCommand makes calls to the sc.exe binary.
+
+See this page for reference:
+https://www.computerhope.com/sc-command.htm
+*/
+func runScCommand(args ...string) (out string, err error) {
+	logger.Log("running command: sc ", strings.Join(args, " "))
+	return runCommand("sc", args...)
+}
+
+var elog debug.Log
+
+type windowsService struct{}
+
+func (m *windowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
+	logger.Log("execute called")
+	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown | svc.AcceptPauseAndContinue
+	changes <- svc.Status{State: svc.StartPending}
+	// fasttick := time.Tick(500 * time.Millisecond)
+	// slowtick := time.Tick(2 * time.Second)
+	// tick := fasttick
+	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
+loop:
+	for {
+		// logger.Log("Loop!")
+		select {
+		// case <-tick:
+		// 	beep()
+		// 	elog.Info(1, "beep")
+		case c := <-r:
+			switch c.Cmd {
+			case svc.Interrogate:
+				changes <- c.CurrentStatus
+				// Testing deadlock from https://code.google.com/p/winsvc/issues/detail?id=4
+				time.Sleep(100 * time.Millisecond)
+				changes <- c.CurrentStatus
+			case svc.Stop, svc.Shutdown:
+				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
+				testOutput := strings.Join(args, "-")
+				testOutput += fmt.Sprintf("-%d", c.Context)
+				elog.Info(1, testOutput)
+				break loop
+			case svc.Pause:
+				changes <- svc.Status{State: svc.Paused, Accepts: cmdsAccepted}
+				// tick = slowtick
+			case svc.Continue:
+				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
+				// tick = fasttick
+			default:
+				elog.Error(1, fmt.Sprintf("unexpected control request #%d", c))
+			}
+		}
+	}
+	changes <- svc.Status{State: svc.StopPending}
+	return
+}
