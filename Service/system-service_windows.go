@@ -124,17 +124,20 @@ func (thisRef WindowsService) Install(start bool) error {
 		"message": fmt.Sprintf("creating: '%s', binary: '%s', args: '%s'", thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
 	})
 
-	conf := mgr.Config{
-		StartType:   mgr.StartAutomatic,
-		DisplayName: thisRef.command.Name,
-		Description: thisRef.command.Description,
-	}
-
 	if winService != nil {
 		winService.Close()
 	}
 
-	winService, err1 := winServiceManager.CreateService(thisRef.command.Name, thisRef.command.Executable, conf, thisRef.command.Args...)
+	winService, err1 := winServiceManager.CreateService(
+		thisRef.command.Name,
+		thisRef.command.Executable,
+		mgr.Config{
+			StartType:   mgr.StartAutomatic,
+			DisplayName: thisRef.command.Name,
+			Description: thisRef.command.Description,
+		},
+		thisRef.command.Args...,
+	)
 	if err1 != nil {
 		if winService != nil {
 			winService.Close()
@@ -145,7 +148,7 @@ func (thisRef WindowsService) Install(start bool) error {
 
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("error creating service: ", err1),
+			"message": fmt.Sprintf("error creating: %s, details: %v ", thisRef.command.Name, err1),
 		})
 
 		return err1
@@ -160,7 +163,7 @@ func (thisRef WindowsService) Install(start bool) error {
 	})
 
 	if start {
-		if err := thisRef.Run(); err != nil {
+		if err := thisRef.Start(); err != nil {
 			return err
 		}
 	}
@@ -182,7 +185,7 @@ func (thisRef WindowsService) Start() error {
 	defer winServiceManager.Disconnect()
 	defer winService.Close()
 
-	err1 := winService.Start(thisRef.command.Args...)
+	err1 := winService.Start() // thisRef.command.Args...
 	if err1 != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
