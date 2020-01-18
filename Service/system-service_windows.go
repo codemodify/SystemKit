@@ -9,9 +9,12 @@ import (
 	"time"
 
 	"golang.org/x/sys/windows/svc"
-	"golang.org/x/sys/windows/svc/debug"
-	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
+
+	helpersExec "github.com/codemodify/SystemKit/Helpers"
+	helpersReflect "github.com/codemodify/SystemKit/Helpers"
+	logging "github.com/codemodify/SystemKit/Logging"
+	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
 // WindowsService - Represents Windows service
@@ -28,104 +31,81 @@ func New(command ServiceCommand) SystemService {
 
 // Run -
 func (thisRef WindowsService) Run() error {
-	logger.Log("running service")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("starting %s service", thisRef.command.Name),
+	})
 
-	name := s.Command.Name
-	debugOn := s.Command.Debug
-
-	var err error
-	if debugOn {
-		elog = debug.New(name)
-	} else {
-		elog, err = eventlog.Open(name)
-		if err != nil {
-			logger.Log("error opening logs: ", err)
-			return err
-		}
-	}
-	defer elog.Close()
-
-	logger.Log("starting service: ", name)
-	elog.Info(1, fmt.Sprintf("starting %s service", name))
-
-	run := svc.Run
-	if debugOn {
-		run = debug.Run
-	}
-
-	err = run(name, &windowsService{})
+	err := svc.Run(thisRef.command.Name, &thisRef)
 	if err != nil {
-		logger.Log("error running service: ", err)
-		elog.Error(1, fmt.Sprintf("%s service failed: %v", name, err))
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprintf("%s service failed: %v", thisRef.command.Name, err),
+		})
+
 		return err
 	}
 
-	logger.Log("service stopped: ", name)
-	elog.Info(1, fmt.Sprintf("%s service stopped", name))
-
-	// if err := svc.Run(s.Command.Name, &windowsService{}); err != nil {
-	// 	return err
-	// }
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s service stopped", thisRef.command.Name),
+	})
 
 	return nil
 }
 
 // Install -
 func (thisRef WindowsService) Install(start bool) error {
-	name := s.Command.Name
-	exePath := s.Command.Program
-	args := s.Command.Args
-	desc := s.Command.Description
-
-	logger.Log("installing system service: ", name)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("installing system service: ", thisRef.command.Name),
+	})
 
 	// Connect to Windows service manager
 	m, err := mgr.Connect()
 	if err != nil {
-		logger.Log("error connecting to service manager: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error connecting to service manager: ", err),
+		})
 		return err
 	}
 	defer m.Disconnect()
 
 	// Open the service so we can manage it
-	srv, err := m.OpenService(name)
+	srv, err := m.OpenService(thisRef.command.Name)
 	if err == nil {
-		logger.Log("error opening the service: ", name)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error opening the service: ", thisRef.command.Name),
+		})
 		srv.Close()
-		return fmt.Errorf("service %s already exists", name)
+		return fmt.Errorf("service %s already exists", thisRef.command.Name)
 	}
 
-	logger.Logf("creating service \"%s\" at path \"%s\" with args \"%s\"", name, exePath, args)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("creating service \"%s\" at path \"%s\" with args \"%s\"", thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
+	})
 
 	// Create the system service
 	conf := mgr.Config{
 		StartType:   mgr.StartAutomatic,
-		DisplayName: name,
-		Description: desc,
+		DisplayName: thisRef.command.Name,
+		Description: thisRef.command.Description,
 	}
-	srv, err = m.CreateService(name, exePath, conf, args...)
+	srv, err = m.CreateService(thisRef.command.Name, thisRef.command.Executable, conf, thisRef.command.Args...)
 	if err != nil {
-		logger.Log("error creating service: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error creating service: ", err),
+		})
 		return err
 	}
 	defer srv.Close()
 
-	// Remove event log if it is there
-	_ = eventlog.Remove(name)
-
-	logger.Log("setting up event logs: ", name)
-
-	err = eventlog.InstallAsEventCreate(name, eventlog.Error|eventlog.Warning|eventlog.Info)
-	if err != nil {
-		logger.Log("error creating service logs: ", err)
-		srv.Delete()
-		return fmt.Errorf("setting up event log failed: %s", err)
-	}
-
-	logger.Log("starting service: ", name)
 	if start {
-		if err := s.Start(); err != nil {
-			logger.Log("error starting service: ", err)
+		if err := thisRef.Start(); err != nil {
 			return err
 		}
 	}
@@ -133,87 +113,69 @@ func (thisRef WindowsService) Install(start bool) error {
 	return nil
 }
 
-// logger.Log("install service")
-
-// name := s.Command.Name
-// prog := s.Command.String()
-// args := []string{
-// 	"create",
-// 	fmt.Sprintf("\"%s\"", name),
-// 	"binPath=",
-// 	fmt.Sprintf("\"%s\"", prog),
-// 	// "start=",
-// 	// "boot",
-// }
-
-// out, err := runScCommand(args...)
-
-// if err != nil {
-// 	if strings.Contains(err.Error(), "exit status 1073") {
-// 		logger.Log("service already exists")
-// 	} else {
-// 		logger.Log("sc create output:\n", out)
-// 		return err
-// 	}
-// }
-
-// // if strings.Contains(out, "SUCCESS") {
-// // 	return nil
-// // }
-
-// Start - 
+// Start -
 func (thisRef WindowsService) Start() error {
-	name := s.Command.Name
-
-	logger.Log("starting system service: ", name)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("starting system service: ", thisRef.command.Name),
+	})
 
 	// Connect to Windows service manager
 	m, err := mgr.Connect()
 	if err != nil {
-		logger.Log("error connecting to service manager: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error connecting to service manager: ", err),
+		})
 		return fmt.Errorf("could not connect to service manager: %v", err)
 	}
 	defer m.Disconnect()
 
-	logger.Log("opening system service")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("opening system service"),
+	})
 
 	// Open the service so we can manage it
-	srv, err := m.OpenService(name)
+	srv, err := m.OpenService(thisRef.command.Name)
 	if err != nil {
-		logger.Log("error opening service: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error opening service: ", err),
+		})
 		return fmt.Errorf("could not access service: %v", err)
 	}
 	defer srv.Close()
 
-	logger.Log("attempting to start system service")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("attempting to start system service"),
+	})
 
-	err = srv.Start(s.Command.Args...)
+	err = srv.Start(thisRef.command.Args...)
 	if err != nil {
-		logger.Log("error starting service: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error starting service: ", err),
+		})
 		return fmt.Errorf("could not start service: %v", err)
 	}
 
-	logger.Log("running service")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("running service"),
+	})
 
 	return nil
 }
 
-// _, err := runScCommand("start", fmt.Sprintf("\"%s\"", s.Command.Name))
-
-// if err != nil {
-// 	logger.Log("start service error: ", err)
-// 	return err
-// }
-
-// return nil
-
 // Restart -
 func (thisRef WindowsService) Restart() error {
-	if err := s.Stop(); err != nil {
+	if err := thisRef.Stop(); err != nil {
 		return err
 	}
 
-	if err := s.Start(); err != nil {
+	if err := thisRef.Start(); err != nil {
 		return err
 	}
 
@@ -222,7 +184,7 @@ func (thisRef WindowsService) Restart() error {
 
 // Stop -
 func (thisRef WindowsService) Stop() error {
-	err := s.control(svc.Stop, svc.Stopped)
+	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
 		if strings.Contains(e, "service does not exist") {
@@ -237,24 +199,21 @@ func (thisRef WindowsService) Stop() error {
 	for {
 		attempt++
 
-		logger.Log("waiting for service to stop")
+		logging.Instance().LogInfoWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("waiting for service to stop"),
+		})
 
-		// // Wait a few seconds before retrying.
+		// Wait a few seconds before retrying
 		time.Sleep(wait)
 
-		// // Attempt to start the service again.
-		stat, err := s.Status()
+		// Attempt to start the service again
+		stat, err := thisRef.Status()
 		if err != nil {
 			return err
 		}
 
-		// // Check the status to see if it is running yet.
-		// stat, err := system.Service.Status()
-		// if err != nil {
-		// 	exit(err, stop)
-		// }
-
-		// // If it is now running, exit the retry loop.
+		// If it is now running, exit the retry loop
 		if !stat.Running {
 			break
 		}
@@ -266,24 +225,9 @@ func (thisRef WindowsService) Stop() error {
 
 	return nil
 }
-// _, err := runScCommand("stop", fmt.Sprintf("\"%s\"", s.Command.Name))
-
-// if err != nil {
-// 	logger.Log("stop service error: ", err)
-
-// 	if strings.Contains(err.Error(), "exit status 1062") {
-// 		logger.Log("service already stopped")
-// 	} else {
-// 		return err
-// 	}
-// }
-
-// return nil
 
 // Uninstall -
 func (thisRef WindowsService) Uninstall() error {
-	name := s.Command.Name
-
 	// Connect to Windows service manager
 	m, err := mgr.Connect()
 	if err != nil {
@@ -292,7 +236,7 @@ func (thisRef WindowsService) Uninstall() error {
 	defer m.Disconnect()
 
 	// Open the service so we can manage it
-	srv, err := m.OpenService(name)
+	srv, err := m.OpenService(thisRef.command.Name)
 	if err != nil {
 		e := err.Error()
 		if strings.Contains(e, "not installed") || strings.Contains(e, "does not exist") {
@@ -308,63 +252,58 @@ func (thisRef WindowsService) Uninstall() error {
 		return err
 	}
 
-	// Remove the event log
-	err = eventlog.Remove(name)
-	if err != nil {
-		return fmt.Errorf("removing event log failed: %s", err)
-	}
-
 	return nil
 }
-// name := s.Command.Name
-
-// err := s.Stop()
-
-// if err != nil {
-// 	return err
-// }
-
-// _, err = runScCommand("delete", fmt.Sprintf("\"%s\"", name))
-
-// if err != nil {
-// 	logger.Log("delete service error: ", err)
-// 	return err
-// }
-
-// return nil
 
 // Status -
-func (thisRef WindowsService) Status() (status *ServiceStatus, err error) {
-	name := s.Command.Name
-	status = &ServiceStatus{}
+func (thisRef WindowsService) Status() (ServiceStatus, error) {
+	status := ServiceStatus{}
 
-	logger.Log("connecting to service manager: ", name)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("connecting to service manager: ", thisRef.command.Name),
+	})
 
 	// Connect to Windows service manager
 	m, err := mgr.Connect()
 	if err != nil {
-		logger.Log("error connecting to service manager: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error connecting to service manager: ", err),
+		})
 		return status, fmt.Errorf("could not connect to service manager: %v", err)
 	}
 	defer m.Disconnect()
 
-	logger.Log("opening system service")
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("opening system service"),
+	})
 
 	// Open the service so we can manage it
-	srv, err := m.OpenService(name)
+	srv, err := m.OpenService(thisRef.command.Name)
 	if err != nil {
-		logger.Log("error opening service: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error opening service: ", err),
+		})
 		return status, fmt.Errorf("could not access service: %v", err)
 	}
 	defer srv.Close()
 
 	stat, err := srv.Query()
 	if err != nil {
-		logger.Log("error getting service status: ", err)
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("error getting service status: ", err),
+		})
 		return status, fmt.Errorf("could not get service status: %v", err)
 	}
 
-	logger.Logf("service status: %#v", stat)
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("service status: %#v", stat),
+	})
 
 	status.PID = int(stat.ProcessId)
 	status.Running = stat.State == svc.Running
@@ -374,14 +313,22 @@ func (thisRef WindowsService) Status() (status *ServiceStatus, err error) {
 
 // Exists -
 func (thisRef WindowsService) Exists() bool {
-	_, err := runScCommand("queryex", fmt.Sprintf("\"%s\"", s.Command.Name))
 
+	args := []string{"queryex", fmt.Sprintf("\"%s\"", thisRef.command.Name)}
+
+	// https://www.computerhope.com/sc-command.htm
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("running command: sc ", strings.Join(args, " ")),
+	})
+
+	_, err := helpersExec.ExecWithArgs("sc", args...)
 	if err != nil {
-		logger.Log("exists service error: ", err)
-		// Service does not exist
-		// if strings.Contains(err.Error(), "FAILED 1060") {
-		// return false
-		// }
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("exists service error: ", err),
+		})
+
 		return false
 	}
 
@@ -389,24 +336,23 @@ func (thisRef WindowsService) Exists() bool {
 }
 
 // FilePath -
-func (thisRef LinuxService) FilePath() string {
+func (thisRef WindowsService) FilePath() string {
 	return ""
 }
 
-func (thisRef LinuxService) FileContent() ([]byte, error) {
+// FileContent -
+func (thisRef WindowsService) FileContent() ([]byte, error) {
 	return []byte{}, nil
 }
 
 func (thisRef WindowsService) control(command svc.Cmd, state svc.State) error {
-	name := s.Command.Name
-
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
 	}
 	defer m.Disconnect()
 
-	srv, err := m.OpenService(name)
+	srv, err := m.OpenService(thisRef.command.Name)
 	if err != nil {
 		return fmt.Errorf("could not access service: %v", err)
 	}
@@ -436,149 +382,20 @@ func (thisRef WindowsService) control(command svc.Cmd, state svc.State) error {
 	return nil
 }
 
-// var beepFunc = syscall.MustLoadDLL("user32.dll").MustFindProc("MessageBeep")
+// Execute - implement the Windows `service.Handler` interface
+func (thisRef WindowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("execute called"),
+	})
 
-// func beep() {
-// 	beepFunc.Call(0xffffffff)
-// }
-
-// logger.Log("uninstall service: ", name)
-
-// serv, err := connectService(name)
-
-// if err != nil {
-// 	logger.Log("uninstall error: ", err)
-// 	return err
-// }
-
-// defer serv.Close()
-
-// logger.Log("deleting service")
-
-// err = serv.Delete()
-
-// if err != nil {
-// 	logger.Log("delete service error: ", err)
-// 	return err
-// }
-
-// logger.Log("service deleted")
-// logger.Log("removing event log")
-
-// err = eventlog.Remove(name)
-
-// if err != nil {
-// 	logger.Log("remove event log error: ", err)
-// 	return err
-// }
-
-// logger.Log("event log removed")
-
-// manager, err := openManager()
-
-// if err != nil {
-// 	return err
-// }
-
-// defer manager.Disconnect()
-
-// cmd := s.Command
-
-// serv, err := manager.CreateService(
-// 	cmd.Name,
-// 	cmd.Program,
-// 	mgr.Config{DisplayName: cmd.Name},
-// 	cmd.Args...,
-// )
-
-// if err != nil {
-// 	return err
-// }
-
-// defer serv.Close()
-
-// err = eventlog.InstallAsEventCreate(cmd.Name, eventlog.Error|eventlog.Warning|eventlog.Info)
-
-// if err != nil {
-// 	serv.Delete()
-// 	return fmt.Errorf("SetupEventLogSource() failed: %s", err)
-// }
-
-// logger.Logf("manager: %+v", manager)
-
-// serv, err := connectService(name)
-
-// if err != nil {
-// 	logger.Log("status error: ", err)
-// 	return ServiceStatus{}, err
-// }
-
-// defer serv.Close()
-
-// logger.Logf("service: %+v", serv)
-
-// pid := getPID(name)
-
-/*
-connectService connects to a Window service by name and
-returns the service or an error
-*/
-func connectService(name string) (s *mgr.Service, err error) {
-	m, err := mgr.Connect()
-
-	if err != nil {
-		logger.Log("open manager error: ", err)
-		return nil, err
-	}
-
-	s, err = m.OpenService(name)
-
-	if err != nil {
-		e := err.Error()
-		logger.Log("open manager error: ", e)
-
-		if strings.Contains(e, "specified service does not exist") {
-			return nil, &ServiceDoesNotExistError{serviceName: name}
-		}
-
-		return nil, err
-	}
-
-	// defer s.Close()
-
-	return s, nil
-}
-
-/*
-runScCommand makes calls to the sc.exe binary.
-
-See this page for reference:
-https://www.computerhope.com/sc-command.htm
-*/
-func runScCommand(args ...string) (out string, err error) {
-	logger.Log("running command: sc ", strings.Join(args, " "))
-	return runCommand("sc", args...)
-}
-
-var elog debug.Log
-
-type windowsService struct{}
-
-func (m *windowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
-	logger.Log("execute called")
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown | svc.AcceptPauseAndContinue
 	changes <- svc.Status{State: svc.StartPending}
-	// fasttick := time.Tick(500 * time.Millisecond)
-	// slowtick := time.Tick(2 * time.Second)
-	// tick := fasttick
+
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 loop:
 	for {
-		// logger.Log("Loop!")
 		select {
-		// case <-tick:
-		// 	beep()
-		// 	elog.Info(1, "beep")
 		case c := <-r:
 			switch c.Cmd {
 			case svc.Interrogate:
@@ -586,23 +403,33 @@ loop:
 				// Testing deadlock from https://code.google.com/p/winsvc/issues/detail?id=4
 				time.Sleep(100 * time.Millisecond)
 				changes <- c.CurrentStatus
+
 			case svc.Stop, svc.Shutdown:
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
 				testOutput := strings.Join(args, "-")
 				testOutput += fmt.Sprintf("-%d", c.Context)
-				elog.Info(1, testOutput)
+				logging.Instance().LogInfoWithFields(loggingC.Fields{
+					"method":  helpersReflect.GetThisFuncName(),
+					"message": fmt.Sprint(testOutput),
+				})
+
 				break loop
+
 			case svc.Pause:
 				changes <- svc.Status{State: svc.Paused, Accepts: cmdsAccepted}
-				// tick = slowtick
+
 			case svc.Continue:
 				changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
-				// tick = fasttick
+
 			default:
-				elog.Error(1, fmt.Sprintf("unexpected control request #%d", c))
+				logging.Instance().LogWarningWithFields(loggingC.Fields{
+					"method":  helpersReflect.GetThisFuncName(),
+					"message": fmt.Sprintf("unexpected control request #%d", c),
+				})
 			}
 		}
 	}
+
 	changes <- svc.Status{State: svc.StopPending}
 	return
 }

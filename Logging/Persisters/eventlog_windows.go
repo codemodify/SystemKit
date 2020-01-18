@@ -4,29 +4,57 @@ package Persisters
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
 
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
 type windowsEventlogLogger struct {
-	logUntil loggingC.LogType
+	logUntil        loggingC.LogType
+	eventlogLogger  *eventlog.Log
+	emergencyLogger *debug.ConsoleLog
 }
 
-// NewWindowsEventLogLogger -
+// NewWindowsEventlogLogger -
 func NewWindowsEventlogLogger(logUntil loggingC.LogType) loggingC.Logger {
-	return &windowsEventlogLogger{
-		logUntil: logUntil,
+	binaryName := filepath.Base(os.Args[0])
+
+	emergencyLogger := debug.New(binaryName)
+	eventlogLogger, err := eventlog.Open(binaryName)
+	if err != nil {
+		emergencyLogger.Error(1, err.Error())
+
+		return &windowsEventlogLogger{
+			logUntil:        logUntil,
+			eventlogLogger:  nil,
+			emergencyLogger: emergencyLogger,
+		}
 	}
-} 
+
+	// _ = eventlog.Remove(binaryName)
+	err = eventlog.InstallAsEventCreate(binaryName, eventlog.Error|eventlog.Warning|eventlog.Info)
+	if err != nil {
+		emergencyLogger.Error(1, fmt.Sprint("error creating service logs: ", err))
+
+		return &windowsEventlogLogger{
+			logUntil:        logUntil,
+			eventlogLogger:  nil,
+			emergencyLogger: emergencyLogger,
+		}
+	}
+
+	return &windowsEventlogLogger{
+		logUntil:        logUntil,
+		eventlogLogger:  eventlogLogger,
+		emergencyLogger: nil,
+	}
+}
 
 func (thisRef windowsEventlogLogger) Log(logEntry loggingC.LogEntry) {
-	wel, err := eventlog.Open(logEntry.Tag)
-	if err != nil {
-		return
-	}
-	defer elog.Close()
-
 	if logEntry.Type == loggingC.TypeDisable {
 		return
 	}
@@ -37,13 +65,28 @@ func (thisRef windowsEventlogLogger) Log(logEntry loggingC.LogEntry) {
 	}
 
 	if logEntry.Type < loggingC.TypeWarning {
-		fmt.Println(RedString(logEntry.Message))
-		wel.Err(1, logEntry.Message)
+		if thisRef.eventlogLogger != nil {
+			thisRef.eventlogLogger.Error(1, logEntry.Message)
+		} else {
+			thisRef.emergencyLogger.Error(1, logEntry.Message)
+		}
 	} else if logEntry.Type == loggingC.TypeWarning {
-		wel.Warn(1, logEntry.Message)
+		if thisRef.eventlogLogger != nil {
+			thisRef.eventlogLogger.Warning(1, logEntry.Message)
+		} else {
+			thisRef.emergencyLogger.Warning(1, logEntry.Message)
+		}
 	} else if logEntry.Type == loggingC.TypeInfo {
-		wel.Info(1, logEntry.Message)
+		if thisRef.eventlogLogger != nil {
+			thisRef.eventlogLogger.Info(1, logEntry.Message)
+		} else {
+			thisRef.emergencyLogger.Info(1, logEntry.Message)
+		}
 	} else if logEntry.Type == loggingC.TypeDebug {
-		wel.Debug(1, logEntry.Message)
+		if thisRef.eventlogLogger != nil {
+			thisRef.eventlogLogger.Info(1, logEntry.Message)
+		} else {
+			thisRef.emergencyLogger.Info(1, logEntry.Message)
+		}
 	}
 }
