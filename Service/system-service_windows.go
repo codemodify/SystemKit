@@ -97,6 +97,14 @@ func (thisRef WindowsService) Install(start bool) error {
 		return fmt.Errorf("service '%s' already exists: ", thisRef.command.Name)
 	}
 
+	// connect again as the `winServiceManager, winService` are null from previous step
+	winServiceManager, winService, err = connectAndOpenService(thisRef.command.Name)
+	if err != nil {
+		return err
+	}
+	defer winServiceManager.Disconnect()
+	defer winService.Close()
+
 	// Create the system service
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
