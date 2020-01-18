@@ -133,6 +133,12 @@ func (thisRef WindowsService) Install(start bool) error {
 	if winService != nil {
 		winService.Close()
 	}
+
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("using: winServiceManager=%v, winService=%v", winServiceManager, winService),
+	})
+
 	winService, err1 := winServiceManager.CreateService(thisRef.command.Name, thisRef.command.Executable, conf, thisRef.command.Args...)
 	if err1 != nil {
 		if winService != nil {
