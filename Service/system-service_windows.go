@@ -482,5 +482,10 @@ func connectAndOpenService(serviceName string) (*mgr.Mgr, *mgr.Service, error) {
 		return nil, nil, err
 	}
 
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("returning: winServiceManager=%v, winService=%v", winServiceManager, winService),
+	})
+
 	return winServiceManager, winService, nil
 }
