@@ -81,7 +81,19 @@ func (thisRef WindowsService) Install(start bool) error {
 	})
 
 	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type == ServiceErrorDoesNotExist {
+	if err.Type == ServiceErrorDoesNotExist { // this is a good thing
+		if winService != nil {
+			winService.Close()
+		}
+		if winServiceManager != nil {
+			winServiceManager.Disconnect()
+		}
+
+		logging.Instance().LogInfoWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprintf("does not exist: %s", thisRef.command.Name),
+		})
+	} else {
 		if winService != nil {
 			winService.Close()
 		}
