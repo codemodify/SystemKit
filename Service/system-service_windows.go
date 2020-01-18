@@ -134,11 +134,6 @@ func (thisRef WindowsService) Install(start bool) error {
 		winService.Close()
 	}
 
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("using: winServiceManager=%v, winService=%v", winServiceManager, winService),
-	})
-
 	winService, err1 := winServiceManager.CreateService(thisRef.command.Name, thisRef.command.Executable, conf, thisRef.command.Args...)
 	if err1 != nil {
 		if winService != nil {
@@ -506,13 +501,8 @@ func connectAndOpenService(serviceName string) (*mgr.Mgr, *mgr.Service, ServiceE
 			"message": fmt.Sprintf("error opening service: %s, %v", serviceName, err),
 		})
 
-		return nil, nil, ServiceError{Type: ServiceErrorDoesNotExist, Details: err}
+		return winServiceManager, nil, ServiceError{Type: ServiceErrorDoesNotExist, Details: err}
 	}
-
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("returning: winServiceManager=%v, winService=%v", winServiceManager, winService),
-	})
 
 	return winServiceManager, winService, ServiceError{Type: ServiceErrorSuccess}
 }
