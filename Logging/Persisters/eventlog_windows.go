@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
@@ -38,12 +39,17 @@ func NewWindowsEventlogLogger(logUntil loggingC.LogType) loggingC.Logger {
 	// _ = eventlog.Remove(binaryName)
 	err = eventlog.InstallAsEventCreate(binaryName, eventlog.Error|eventlog.Warning|eventlog.Info)
 	if err != nil {
-		emergencyLogger.Error(1, fmt.Sprint("error creating service logs: ", err))
+		if strings.Contains(err.Error(), "registry key already exists") {
+			// SAFE to ignore
+			emergencyLogger.Error(1, fmt.Sprint("warning creating service logs: ", err))
+		} else {
+			emergencyLogger.Error(1, fmt.Sprint("error creating service logs: ", err))
 
-		return &windowsEventlogLogger{
-			logUntil:        logUntil,
-			eventlogLogger:  nil,
-			emergencyLogger: emergencyLogger,
+			return &windowsEventlogLogger{
+				logUntil:        logUntil,
+				eventlogLogger:  nil,
+				emergencyLogger: emergencyLogger,
+			}
 		}
 	}
 
