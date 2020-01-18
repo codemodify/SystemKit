@@ -160,7 +160,7 @@ func (thisRef WindowsService) Install(start bool) error {
 	})
 
 	if start {
-		if err := thisRef.Start(); err != nil {
+		if err := thisRef.Run(); err != nil {
 			return err
 		}
 	}
