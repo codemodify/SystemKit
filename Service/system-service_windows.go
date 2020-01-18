@@ -77,7 +77,7 @@ func (thisRef WindowsService) Install(start bool) error {
 	// check if service exists
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("check if service exists: %s", thisRef.command.Name),
+		"message": fmt.Sprintf("check if exists: %s", thisRef.command.Name),
 	})
 
 	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
@@ -100,7 +100,7 @@ func (thisRef WindowsService) Install(start bool) error {
 	// Create the system service
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("creating service: '%s', binary: '%s', args: '%s'", thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
+		"message": fmt.Sprintf("creating: '%s', binary: '%s', args: '%s'", thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
 	})
 
 	conf := mgr.Config{
@@ -131,6 +131,11 @@ func (thisRef WindowsService) Install(start bool) error {
 
 	winService.Close()
 	winServiceManager.Disconnect()
+
+	logging.Instance().LogInfoWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("created: '%s', binary: '%s', args: '%s'", thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
+	})
 
 	if start {
 		if err := thisRef.Start(); err != nil {
