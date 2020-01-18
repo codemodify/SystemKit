@@ -1,5 +1,7 @@
 package Service
 
+import "fmt"
+
 // SystemService - represents a generic system service configuration
 type SystemService interface {
 	Run() error
@@ -40,4 +42,36 @@ type ServiceCommand struct {
 type ServiceStatus struct {
 	Running bool
 	PID     int
+}
+
+// ServiceErrorType -
+type ServiceErrorType int
+
+// ServiceErrorSuccess -
+const (
+	ServiceErrorSuccess      ServiceErrorType = iota
+	ServiceErrorDoesNotExist                  = iota
+	ServiceErrorOther                         = iota
+)
+
+func (e ServiceErrorType) String() string {
+	switch e {
+	case ServiceErrorSuccess:
+		return "Success"
+
+	case ServiceErrorDoesNotExist:
+		return "Service Does Not Exist"
+
+	case ServiceErrorOther:
+		return "Other error occured"
+
+	default:
+		return fmt.Sprintf("%d", int(e))
+	}
+}
+
+// ServiceError -
+type ServiceError struct {
+	Type    ServiceErrorType
+	Details error
 }
