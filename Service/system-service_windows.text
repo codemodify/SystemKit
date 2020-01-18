@@ -1,35 +1,3 @@
-// - connectService connects to a Window service by name and returns the service or an error
-func connectService(name string) (s *mgr.Service, err error) {
-	m, err := mgr.Connect()
-
-	if err != nil {
-		logging.Instance().LogErrorWithFields(loggingC.Fields{
-			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("open manager error: ", err),
-		})
-		return nil, err
-	}
-
-	s, err = m.OpenService(name)
-
-	if err != nil {
-		e := err.Error()
-		logging.Instance().LogErrorWithFields(loggingC.Fields{
-			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("open manager error: ", e),
-		})
-
-		if strings.Contains(e, "specified service does not exist") {
-			return nil, fmt.Errorf("service name: %s", name)
-		}
-
-		return nil, err
-	}
-
-	// defer thisRef.Close()
-
-	return s, nil
-}
 
 
 // logger.Log("install service")
