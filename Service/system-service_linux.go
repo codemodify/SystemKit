@@ -73,7 +73,7 @@ func (thisRef LinuxService) Install(start bool) error {
 
 	logging.Instance().LogInfoWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("wrote unit:", content),
+		"message": fmt.Sprintf("wrote unit: %s", string(content)),
 	})
 
 	if start {
