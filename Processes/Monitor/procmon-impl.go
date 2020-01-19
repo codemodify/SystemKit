@@ -228,6 +228,19 @@ func (thisRef *WindowsProcessMonitor) RemoveFromMonitor(id string) {
 	}
 }
 
+// GetAll -
+func (thisRef *WindowsProcessMonitor) GetAll() []string {
+	thisRef.procsSync.RLock()
+	defer thisRef.procsSync.RUnlock()
+
+	allIds := []string{}
+	for k := range thisRef.procs {
+		allIds = append(allIds, k)
+	}
+
+	return allIds
+}
+
 func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),

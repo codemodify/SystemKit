@@ -13,6 +13,7 @@ type ProcessMonitor interface {
 	StopAll() []error
 	GetProcessInfo(id string) ProcessInfo
 	RemoveFromMonitor(id string)
+	GetAll() []string
 }
 
 // ProcessOutputReader -
