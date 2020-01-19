@@ -215,6 +215,20 @@ func (thisRef *WindowsProcessMonitor) GetProcessInfo(id string) ProcessInfo {
 	return thisRef.procsInfo[id]
 }
 
+// RemoveFromMonitor -
+func (thisRef *WindowsProcessMonitor) RemoveFromMonitor(id string) {
+	thisRef.procsSync.Lock()
+	defer thisRef.procsSync.Unlock()
+
+	if _, ok := thisRef.procs[id]; ok {
+		delete(thisRef.procs, id) // delete
+	}
+
+	if _, ok := thisRef.procsInfo[id]; ok {
+		delete(thisRef.procsInfo, id) // delete
+	}
+}
+
 func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
