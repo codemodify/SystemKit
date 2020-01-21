@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,8 +16,8 @@ import (
 	processList "github.com/codemodify/SystemKit/Processes/List"
 )
 
-// WindowsProcessMonitor - Represents Windows service
-type WindowsProcessMonitor struct {
+// TheProcessMonitor - Represents Windows service
+type TheProcessMonitor struct {
 	procs     map[string]Process
 	procsInfo map[string]*processInfo
 	procsSync sync.RWMutex
@@ -31,7 +32,7 @@ type processInfo struct {
 
 // New -
 func New() ProcessMonitor {
-	return &WindowsProcessMonitor{
+	return &TheProcessMonitor{
 		procs:     map[string]Process{},
 		procsInfo: map[string]*processInfo{},
 		procsSync: sync.RWMutex{},
@@ -39,7 +40,7 @@ func New() ProcessMonitor {
 }
 
 // Spawn -
-func (thisRef *WindowsProcessMonitor) Spawn(id string, process Process) error {
+func (thisRef *TheProcessMonitor) Spawn(id string, process Process) error {
 	thisRef.procsSync.Lock()
 
 	thisRef.procs[id] = process
@@ -54,7 +55,11 @@ func (thisRef *WindowsProcessMonitor) Spawn(id string, process Process) error {
 	})
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to spawn details: %s", thisRef.procs[id]),
+		"message": fmt.Sprintf("attempting to spawn details: %s", thisRef.procs[id].String()),
+	})
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("attempting to spawn CMD-WITH-ARGS: %s %s", thisRef.procs[id].Executable, strings.Join(thisRef.procs[id].Args, " ")),
 	})
 
 	// set working folder
@@ -101,7 +106,7 @@ func (thisRef *WindowsProcessMonitor) Spawn(id string, process Process) error {
 }
 
 // Start -
-func (thisRef *WindowsProcessMonitor) Start(id string) error {
+func (thisRef *TheProcessMonitor) Start(id string) error {
 	if thisRef.GetProcessInfo(id).IsRunning() {
 		return nil
 	}
@@ -131,7 +136,7 @@ func (thisRef *WindowsProcessMonitor) Start(id string) error {
 }
 
 // Stop -
-func (thisRef *WindowsProcessMonitor) Stop(id string) error {
+func (thisRef *TheProcessMonitor) Stop(id string) error {
 	if !thisRef.GetProcessInfo(id).IsRunning() {
 		return nil
 	}
@@ -178,7 +183,7 @@ func (thisRef *WindowsProcessMonitor) Stop(id string) error {
 }
 
 // Restart -
-func (thisRef *WindowsProcessMonitor) Restart(id string) error {
+func (thisRef *TheProcessMonitor) Restart(id string) error {
 	err := thisRef.Stop(id)
 	if err != nil {
 		return err
@@ -188,7 +193,7 @@ func (thisRef *WindowsProcessMonitor) Restart(id string) error {
 }
 
 // StopAll -
-func (thisRef *WindowsProcessMonitor) StopAll() []error {
+func (thisRef *TheProcessMonitor) StopAll() []error {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
@@ -207,7 +212,7 @@ func (thisRef *WindowsProcessMonitor) StopAll() []error {
 }
 
 // GetProcessInfo -
-func (thisRef *WindowsProcessMonitor) GetProcessInfo(id string) ProcessInfo {
+func (thisRef *TheProcessMonitor) GetProcessInfo(id string) ProcessInfo {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
@@ -215,7 +220,7 @@ func (thisRef *WindowsProcessMonitor) GetProcessInfo(id string) ProcessInfo {
 }
 
 // RemoveFromMonitor -
-func (thisRef *WindowsProcessMonitor) RemoveFromMonitor(id string) {
+func (thisRef *TheProcessMonitor) RemoveFromMonitor(id string) {
 	thisRef.procsSync.Lock()
 	defer thisRef.procsSync.Unlock()
 
@@ -229,7 +234,7 @@ func (thisRef *WindowsProcessMonitor) RemoveFromMonitor(id string) {
 }
 
 // GetAll -
-func (thisRef *WindowsProcessMonitor) GetAll() []string {
+func (thisRef *TheProcessMonitor) GetAll() []string {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
