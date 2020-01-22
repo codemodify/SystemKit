@@ -252,13 +252,16 @@ func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 		"message": fmt.Sprintf("starting to read StdOut: %s", process.Executable),
 	})
 
-	output := make([]byte, 5000)
+	// output := make([]byte, 5000)
 
 	reader := bufio.NewReader(readerCloser)
-	lengthRead, err := reader.Read(output)
+	// lengthRead, err := reader.Read(output)
+	line, _, err := reader.ReadLine()
 	for err != io.EOF {
-		process.OnStdOut(output[0:lengthRead])
-		lengthRead, err = reader.Read(output)
+		// process.OnStdOut(output[0:lengthRead])
+		process.OnStdOut(line)
+		// lengthRead, err = reader.Read(output)
+		line, _, err = reader.ReadLine()
 	}
 
 	if err != nil {
@@ -275,13 +278,16 @@ func readStdErrFromProc(readerCloser io.ReadCloser, process Process) {
 		"message": fmt.Sprintf("starting to read StdErr: %s", process.Executable),
 	})
 
-	output := make([]byte, 5000)
+	// output := make([]byte, 5000)
 
 	reader := bufio.NewReader(readerCloser)
-	lengthRead, err := reader.Read(output)
+	// lengthRead, err := reader.Read(output)
+	line, _, err := reader.ReadLine()
 	for err != io.EOF {
-		process.OnStdErr(output[0:lengthRead])
-		lengthRead, err = reader.Read(output)
+		// process.OnStdOut(output[0:lengthRead])
+		process.OnStdOut(line)
+		// lengthRead, err = reader.Read(output)
+		line, _, err = reader.ReadLine()
 	}
 
 	if err != nil {
