@@ -39,18 +39,13 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 
 	if logEntry.Type == loggingC.TypeTrace {
 		fmt.Println(BlackStringYellowBG(logEntry.Message))
-
 	} else if logEntry.Type < loggingC.TypeWarning {
 		fmt.Println(RedString(logEntry.Message))
-
 	} else if logEntry.Type == loggingC.TypeWarning {
 		fmt.Println(YellowString(logEntry.Message))
-
 	} else if logEntry.Type == loggingC.TypeInfo {
 		fmt.Println(WhiteString(logEntry.Message))
-
 	} else if logEntry.Type == loggingC.TypeDebug {
 		fmt.Println(CyanString(logEntry.Message))
-
 	}
 }

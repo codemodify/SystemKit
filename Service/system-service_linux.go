@@ -249,27 +249,23 @@ func (thisRef LinuxService) FilePath() string {
 func (thisRef LinuxService) FileContent() ([]byte, error) {
 	transformedCommand := transformCommandForSaveToDisk(thisRef.command)
 
-	systemDServiceFileTemplate := template.Must(template.New("systemDFile").Parse(
-		`[Unit]
-		After=network.target
-		Description={{ .Description }}
-		Documentation={{ .DocumentationURL }}
-		
-		[Service]
-		ExecStart={{ .Executable }}
-		WorkingDirectory={{ .WorkingDirectory }}
-		Restart=on-failure
-		Type=simple
+	systemDServiceFileTemplate := template.Must(template.New("systemDFile").Parse(`
+[Unit]
+After=network.target
+Description={{ .Description }}
+Documentation={{ .DocumentationURL }}
 
-		{{ if .RunAsUser }}
-		User={{ .RunAsUser }}
-		{{ end }}
-		{{ if .RunAsGroup }}
-		Group={{ .RunAsGroup }}
-		{{ end }}
-		
-		[Install]
-		WantedBy=multi-user.target
+[Service]
+ExecStart={{ .Executable }}
+WorkingDirectory={{ .WorkingDirectory }}
+Restart=on-failure
+Type=simple
+
+{{ if .RunAsUser }}User={{ .RunAsUser }}{{ end }}
+{{ if .RunAsGroup }}Group={{ .RunAsGroup }}{{ end }}
+
+[Install]
+WantedBy=multi-user.target
 	`))
 
 	var systemDServiceFileTemplateAsBytes bytes.Buffer
