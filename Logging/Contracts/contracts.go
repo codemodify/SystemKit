@@ -28,13 +28,13 @@ func (logType LogType) String() string {
 	case TypeTrace:
 		return "TRACE"
 	case TypePanic:
-		return "FWORD"
+		return "PANIC"
 	case TypeFatal:
-		return "OSHIT"
+		return "FATAL"
 	case TypeError:
 		return "ERROR"
 	case TypeWarning:
-		return "OOOPS"
+		return "WAARN"
 	case TypeInfo:
 		return "INFOO"
 	case TypeDebug:
