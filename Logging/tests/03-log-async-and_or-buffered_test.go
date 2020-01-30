@@ -17,7 +17,7 @@ func Test_03(t *testing.T) {
 				loggingM.NewBufferedLogger(
 					loggingM.NewMultiLogger(
 						[]loggingC.Logger{
-							loggingP.NewConsoleLogger(loggingC.TypeDebug),
+							loggingP.NewConsoleLogger(loggingC.TypeDebug, loggingP.NewConsoleLoggerDefaultColors()),
 							loggingP.NewFileLogger(loggingC.TypeDebug, "log.log"),
 						},
 					),

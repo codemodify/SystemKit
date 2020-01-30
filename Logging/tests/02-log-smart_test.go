@@ -15,7 +15,7 @@ func Test_02(t *testing.T) {
 		loggingF.NewSimpleFormatterLogger(
 			loggingM.NewMultiLogger(
 				[]loggingC.Logger{
-					loggingP.NewConsoleLogger(loggingC.TypeDebug),
+					loggingP.NewConsoleLogger(loggingC.TypeDebug, loggingP.NewConsoleLoggerDefaultColors()),
 					loggingP.NewFileLogger(loggingC.TypeDebug, "log.log"),
 				},
 			),

@@ -1,6 +1,9 @@
 package Service
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // SystemService - represents a generic system service configuration
 type SystemService interface {
@@ -38,6 +41,16 @@ type ServiceCommand struct {
 	RunAsGroup          string
 }
 
+func (thisRef ServiceCommand) String() string {
+	bytes, err := json.Marshal(thisRef)
+	if err != nil {
+		// INFO: in normal app you could log this
+		return ""
+	}
+
+	return string(bytes)
+}
+
 // ServiceStatus is a generic representation of the service running on the system
 type ServiceStatus struct {
 	Running bool
@@ -54,8 +67,8 @@ const (
 	ServiceErrorOther                         = iota
 )
 
-func (e ServiceErrorType) String() string {
-	switch e {
+func (thisRef ServiceErrorType) String() string {
+	switch thisRef {
 	case ServiceErrorSuccess:
 		return "Success"
 
@@ -66,7 +79,7 @@ func (e ServiceErrorType) String() string {
 		return "Other error occured"
 
 	default:
-		return fmt.Sprintf("%d", int(e))
+		return fmt.Sprintf("%d", int(thisRef))
 	}
 }
 

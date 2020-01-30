@@ -20,8 +20,13 @@ func Init(logger loggingC.EasyLogger) {
 
 // NewConsoleLogger -
 func NewConsoleLogger() loggingC.EasyLogger {
+	return NewConsoleLoggerCustomColors(loggingP.NewConsoleLoggerDefaultColors())
+}
+
+// NewConsoleLoggerCustomColors -
+func NewConsoleLoggerCustomColors(colors map[loggingC.LogType]loggingP.ConsoleLoggerColorDelegate) loggingC.EasyLogger {
 	return housekeeping.NewDefaultHelperImplmentation(
-		loggingP.NewConsoleLogger(loggingC.TypeDebug),
+		loggingP.NewConsoleLogger(loggingC.TypeDebug, colors),
 	)
 }
 
@@ -32,6 +37,7 @@ func NewFileLogger() loggingC.EasyLogger {
 	)
 }
 
+// NewEasyLoggerForLogger -
 func NewEasyLoggerForLogger(logger loggingC.Logger) loggingC.EasyLogger {
 	return housekeeping.NewDefaultHelperImplmentation(logger)
 }
