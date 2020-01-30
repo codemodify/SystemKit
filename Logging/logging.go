@@ -4,17 +4,31 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 	loggingP "github.com/codemodify/SystemKit/Logging/Persisters"
 	housekeeping "github.com/codemodify/SystemKit/Logging/local-house-keeping"
+	"sync"
 )
 
 var instance loggingC.EasyLogger
+var instanceSync sync.RWMutex
 
 // Instance -
 func Instance() loggingC.EasyLogger {
+	instanceSync.Lock()
+	defer instanceSync.Unlock()
+
+	if instance == nil {
+		instanceSync.Unlock()
+		Init(NewConsoleLogger())
+		instanceSync.Lock()
+	}
+
 	return instance
 }
 
 // Init -
 func Init(logger loggingC.EasyLogger) {
+	instanceSync.Lock()
+	defer instanceSync.Unlock()
+
 	instance = logger
 }
 
