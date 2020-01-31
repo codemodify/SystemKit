@@ -293,33 +293,35 @@ func (thisRef MacOSService) FilePath() string {
 
 // FileContent -
 func (thisRef MacOSService) FileContent() ([]byte, error) {
-	plistTemplate := template.Must(template.New("launchdConfig").Parse(
-		`<?xml version='1.0' encoding='UTF-8'?>
-		<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\" >
-		<plist version='1.0'>
-			<dict>
-				<key>Label</key>
-				<string>{{ .DisplayLabel }}</string>
+	plistTemplate := template.Must(template.New("launchdConfig").Parse(`
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\" >
+<plist version='1.0'>
+	<dict>
+		<key>Label</key>
+		<string>{{ .Name }}</string>
 
-				<key>ProgramArguments</key>
-				<array>{{ range $arg := .Args }}
-					<string>{{ $arg }}</string>{{ end }}
-				</array>
+		<key>ProgramArguments</key>
+		<array>{{ range $arg := .Args }}
+			<string>{{ $arg }}</string>{{ end }}
+		</array>
 
-				<key>StandardOutPath</key>
-				<string>{{ .StdOutPath }}</string>
+		<key>StandardOutPath</key>
+		<string>{{ .StdOutPath }}</string>
 
-				<key>StandardErrorPath</key>
-				<string>{{ .StdErrPath }}</string>
+		<key>StandardErrorPath</key>
+		<string>{{ .StdErrPath }}</string>
 
-				<key>KeepAlive</key> <{{ .KeepAlive }}/>
-				<key>RunAtLoad</key> <{{ .RunAtLoad }}/>
+		<key>KeepAlive</key> 
+		<{{ .KeepAlive }}/>
+		<key>RunAtLoad</key>
+		<{{ .RunAtLoad }}/>
 
-				<key>WorkingDirectory</key>
-				<string>{{ .WorkingDirectory }}</string>
-			</dict>
-		</plist>
-		`))
+		<key>WorkingDirectory</key>
+		<string>{{ .WorkingDirectory }}</string>
+	</dict>
+</plist>
+	`))
 
 	var plistTemplateBytes bytes.Buffer
 	if err := plistTemplate.Execute(&plistTemplateBytes, thisRef.command); err != nil {
