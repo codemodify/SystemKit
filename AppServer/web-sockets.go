@@ -27,6 +27,7 @@ type WebScoketsServer struct {
 	HTTPServer     IServer
 	peers          []*websocket.Conn
 	peersSync      sync.RWMutex
+	enableCORS     bool
 }
 
 // NewWebScoketsServer -
@@ -45,7 +46,9 @@ func NewWebScoketsServer(handlers []WebScoketsHandler) IServer {
 
 		var handler WebScoketsHandler = thisRef.routeToHandler[r.URL.Path]
 
-		var upgrader = websocket.Upgrader{}
+		var upgrader = websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return thisRef.enableCORS },
+		}
 		ws, err := upgrader.Upgrade(rw, r, nil)
 		if err != nil {
 			log.Print("upgrade: ", err)
@@ -74,6 +77,7 @@ func NewWebScoketsServer(handlers []WebScoketsHandler) IServer {
 
 // Run - Implement `IServer`
 func (thisRef *WebScoketsServer) Run(ipPort string, enableCORS bool) error {
+	thisRef.enableCORS = enableCORS
 	return thisRef.HTTPServer.Run(ipPort, enableCORS)
 }
 
