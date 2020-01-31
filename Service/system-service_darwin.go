@@ -246,7 +246,7 @@ func (thisRef MacOSService) Status() (ServiceStatus, error) {
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(list)), "\n")
-	if thisRef.command.DisplayLabel == "" {
+	if thisRef.command.Name == "" {
 		return ServiceStatus{}, err
 	}
 
@@ -258,7 +258,7 @@ func (thisRef MacOSService) Status() (ServiceStatus, error) {
 
 		chunks := strings.Split(line, "\t")
 
-		if chunks[2] == thisRef.command.DisplayLabel {
+		if chunks[2] == thisRef.command.Name {
 			if chunks[0] != "-" {
 				pid, err := strconv.Atoi(chunks[0])
 
