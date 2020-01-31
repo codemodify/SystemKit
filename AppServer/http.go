@@ -59,7 +59,7 @@ func (thisRef *HTTPServer) PrepareRoutes(router *mux.Router) {
 			"message": fmt.Sprintf("%s - for %s", handler.Route, handler.Verb),
 		})
 
-		router.HandleFunc(handler.Route, handler.Handler).Methods(handler.Verb).Name(handler.Route)
+		router.HandleFunc(handler.Route, handler.Handler).Methods(handler.Verb, "OPTIONS").Name(handler.Route)
 	}
 }
 
