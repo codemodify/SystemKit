@@ -27,6 +27,7 @@ type processInfo struct {
 	osCmd     *exec.Cmd
 	startedAt time.Time
 	stoppedAt time.Time
+	pid       int
 	err       error
 }
 
@@ -131,6 +132,8 @@ func (thisRef *TheProcessMonitor) Start(id string) error {
 
 		return err
 	}
+
+	thisRef.procsInfo[id].pid = thisRef.procsInfo[id].osCmd.Process.Pid
 
 	return nil
 }
@@ -330,4 +333,8 @@ func (thisRef processInfo) StartedAt() time.Time {
 
 func (thisRef processInfo) StoppedAt() time.Time {
 	return thisRef.stoppedAt
+}
+
+func (thisRef processInfo) PID() int {
+	return thisRef.pid
 }

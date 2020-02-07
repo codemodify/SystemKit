@@ -1,8 +1,9 @@
 package Monitor
 
-import "time"
-
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // ProcessMonitor - represents a generic system service configuration
 type ProcessMonitor interface {
@@ -43,4 +44,5 @@ type ProcessInfo interface {
 	ExitCode() int
 	StartedAt() time.Time
 	StoppedAt() time.Time
+	PID() int
 }
