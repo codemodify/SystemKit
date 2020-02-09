@@ -13,9 +13,9 @@ See samples or readme for each folder
 
 <nobr>
 <img src="https://img.icons8.com/ios-filled/50/000000/linux.png" width="30" />
-<nobr /> <img src="https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png" width="30" />
-<nobr /> <img src="https://img.icons8.com/ios-filled/50/000000/mac-os.png" width="30" />
-<nobr /> <img src="https://img.icons8.com/ios-filled/50/000000/windows-logo.png" width="30" />
+<img src="https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png" width="30" />
+<img src="https://img.icons8.com/ios-filled/50/000000/mac-os.png" width="30" />
+<img src="https://img.icons8.com/ios-filled/50/000000/windows-logo.png" width="30" />
 </nobr>
 
 # ![](https://fonts.gstatic.com/s/i/materialicons/label_important/v4/24px.svg) SDLC
