@@ -42,14 +42,14 @@ func (thisRef LinuxService) Install(start bool) error {
 	path := thisRef.FilePath()
 	dir := filepath.Dir(path)
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("making sure folder exists: ", dir),
 	})
 
 	os.MkdirAll(dir, os.ModePerm)
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("generating unit file"),
 	})
@@ -60,7 +60,7 @@ func (thisRef LinuxService) Install(start bool) error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("writing unit to: ", path),
 	})
@@ -71,7 +71,7 @@ func (thisRef LinuxService) Install(start bool) error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("wrote unit: %s", string(content)),
 	})
@@ -88,7 +88,7 @@ func (thisRef LinuxService) Install(start bool) error {
 
 // Start -
 func (thisRef LinuxService) Start() error {
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "loading unit file with systemd",
 	})
@@ -98,7 +98,7 @@ func (thisRef LinuxService) Start() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "enabling unit file with systemd",
 	})
@@ -127,7 +127,7 @@ func (thisRef LinuxService) Restart() error {
 
 // Stop -
 func (thisRef LinuxService) Stop() error {
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
@@ -136,7 +136,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "stopping unit file with systemd",
 	})
@@ -145,14 +145,14 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "disabling unit file with systemd",
 	})
 	_, err = runSystemCtlCommand("disable", thisRef.command.Name)
 	if err != nil {
 		if strings.Contains(err.Error(), "Removed") {
-			logging.Instance().LogInfoWithFields(loggingC.Fields{
+			logging.Instance().LogDebugWithFields(loggingC.Fields{
 				"method":  helpersReflect.GetThisFuncName(),
 				"message": "ignoring remove symlink error",
 			})
@@ -161,7 +161,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
@@ -170,7 +170,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "running reset-failed",
 	})
@@ -189,7 +189,7 @@ func (thisRef LinuxService) Uninstall() error {
 		return err
 	}
 
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "remove unit file",
 	})
@@ -203,30 +203,29 @@ func (thisRef LinuxService) Uninstall() error {
 
 // Status -
 func (thisRef LinuxService) Status() (ServiceStatus, error) {
-	active, _ := runSystemCtlCommand("is-active", thisRef.command.Name)
+	serviceStatus, _ := runSystemCtlCommand("is-active", thisRef.command.Name)
 
-	status := ServiceStatus{}
-
-	// Check if service is running
-	if !strings.Contains(active, "active") {
-		return status, nil
+	// Take 1
+	if strings.Contains(serviceStatus, "inactive") {
+		return ServiceStatus{}, nil
 	}
 
-	stat, _ := runSystemCtlCommand("status", thisRef.command.Name)
+	// Take 2
+	serviceStatus, _ = runSystemCtlCommand("status", thisRef.command.Name)
+	status := ServiceStatus{
+		IsRunning: true,
+	}
 
 	// Get the PID from the status output
-	lines := strings.Split(stat, "\n")
+	lines := strings.Split(serviceStatus, "\n")
 	for _, line := range lines {
 		if strings.Contains(line, "Main PID") {
-			parts := strings.Split(strings.TrimSpace(line), " ")
-			pid, _ := strconv.Atoi(parts[2])
-			if pid != 0 {
-				status.PID = pid
+			lineParts := strings.Split(strings.TrimSpace(line), " ")
+			if len(lineParts) >= 2 {
+				status.PID, _ = strconv.Atoi(lineParts[2])
 			}
 		}
 	}
-
-	status.Running = true
 
 	return status, nil
 }
@@ -276,20 +275,10 @@ WantedBy=multi-user.target
 	return systemDServiceFileTemplateAsBytes.Bytes(), nil
 }
 
-func runSystemCtlCommand(cmd string, label string) (out string, err error) {
-	args := strings.Split(cmd, " ")
-
-	if !helpersUser.IsRoot() {
-		args = append(args, "--user")
-	}
-
-	if label != "" {
-		args = append(args, label)
-	}
-
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
+func runSystemCtlCommand(args ...string) (out string, err error) {
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("running command: systemctl ", strings.Join(args, " ")),
+		"message": fmt.Sprint("EXEC: systemctl ", strings.Join(args, " ")),
 	})
 
 	return helpersExec.ExecWithArgs("systemctl", args...)

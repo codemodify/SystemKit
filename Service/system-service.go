@@ -51,10 +51,10 @@ func (thisRef ServiceCommand) String() string {
 	return string(bytes)
 }
 
-// ServiceStatus is a generic representation of the service running on the system
+// ServiceStatus - is a generic representation of the service running on the system
 type ServiceStatus struct {
-	Running bool
-	PID     int
+	IsRunning bool
+	PID       int
 }
 
 // ServiceErrorType -

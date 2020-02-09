@@ -13,8 +13,8 @@ var cmd service.ServiceCommand
 
 func init() {
 	cmd = service.ServiceCommand{
-		Name:         "MyService",
-		DisplayLabel: "com.myservice",
+		Name:         "Spooler",
+		DisplayLabel: "My Service",
 		Executable:   "vim",
 		Args:         []string{},
 		Description:  "My systemservice test!",
@@ -88,14 +88,19 @@ func Test_Sample01_Uninstall(t *testing.T) {
 }
 
 func Test_Sample01_Status(t *testing.T) {
-	logging.Init(logging.NewConsoleLogger())
-
-	logging.Instance().LogInfoWithFields(loggingC.Fields{
-		"status": cmd.String(),
-	})
-
 	syetemService := service.New(cmd)
-	syetemService.Status()
+	status, err := syetemService.Status()
+
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"err": err.Error(),
+		})
+	} else {
+		logging.Instance().LogInfoWithFields(loggingC.Fields{
+			"Running": status.IsRunning,
+			"PID":     status.PID,
+		})
+	}
 }
 
 func Test_Sample01_Exists(t *testing.T) {
