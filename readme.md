@@ -10,10 +10,10 @@ Is a set of carefully cherry picked approaches to have stable framework to write
 See samples or readme for each folder
 
 # ![](https://fonts.gstatic.com/s/i/materialicons/label_important/v4/24px.svg) Runs On
-![](https://img.icons8.com/ios-filled/50/000000/linux.png)
-![](https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png)
-![](https://img.icons8.com/ios-filled/50/000000/mac-os.png)
-![](https://img.icons8.com/ios-filled/50/000000/windows-logo.png)
+![](https://img.icons8.com/ios-filled/50/000000/linux.png =100x100)
+![](https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png =100x100)
+![](https://img.icons8.com/ios-filled/50/000000/mac-os.png =100x100)
+![](https://img.icons8.com/ios-filled/50/000000/windows-logo.png =100x100)
 
 # ![](https://fonts.gstatic.com/s/i/materialicons/label_important/v4/24px.svg) SDLC
 - Debug using VSCode as `root`
