@@ -12,7 +12,7 @@ See samples or readme for each folder
 # ![](https://fonts.gstatic.com/s/i/materialicons/label_important/v4/24px.svg) Runs On
 
 &nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
 <nobr>
 <span><img src="https://img.icons8.com/ios-filled/50/000000/linux.png" width="30" /></span>
 <span><img src="https://img.icons8.com/ios-filled/50/000000/raspberry-pi.png" width="30" /></span>
