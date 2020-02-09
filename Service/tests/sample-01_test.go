@@ -13,7 +13,7 @@ var cmd service.ServiceCommand
 
 func init() {
 	cmd = service.ServiceCommand{
-		Name:         "Spooler",
+		Name:         "it.remote.cli",
 		DisplayLabel: "My Service",
 		Executable:   "vim",
 		Args:         []string{},
@@ -29,7 +29,12 @@ func Test_Sample01_Run(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Run()
+	err := syetemService.Run()
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"start": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Install(t *testing.T) {
@@ -40,7 +45,12 @@ func Test_Sample01_Install(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Install(false)
+	err := syetemService.Install(false)
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"start": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Start(t *testing.T) {
@@ -51,7 +61,12 @@ func Test_Sample01_Start(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Start()
+	err := syetemService.Start()
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"start": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Restart(t *testing.T) {
@@ -62,7 +77,12 @@ func Test_Sample01_Restart(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Restart()
+	err := syetemService.Restart()
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"stop": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Stop(t *testing.T) {
@@ -73,7 +93,12 @@ func Test_Sample01_Stop(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Stop()
+	err := syetemService.Stop()
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"stop": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Uninstall(t *testing.T) {
@@ -84,7 +109,12 @@ func Test_Sample01_Uninstall(t *testing.T) {
 	})
 
 	syetemService := service.New(cmd)
-	syetemService.Uninstall()
+	err := syetemService.Uninstall()
+	if err != nil {
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"uninstall": err.Error(),
+		})
+	}
 }
 
 func Test_Sample01_Status(t *testing.T) {

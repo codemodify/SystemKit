@@ -131,7 +131,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
-	_, err := runSystemCtlCommand("daemon-reload", "")
+	_, err := runSystemCtlCommand("daemon-reload")
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
 	})
-	_, err = runSystemCtlCommand("daemon-reload", "")
+	_, err = runSystemCtlCommand("daemon-reload")
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "running reset-failed",
 	})
-	_, err = runSystemCtlCommand("reset-failed", "")
+	_, err = runSystemCtlCommand("reset-failed")
 	if err != nil {
 		return err
 	}
