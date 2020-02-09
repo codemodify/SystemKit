@@ -61,7 +61,7 @@ func GetThisFuncNameSkip5() string {
 
 // GetThisFuncNameWithLine -
 func GetThisFuncNameWithLine() string {
-	return fmt.Sprintf("%d : %s", getFuncName(2), GetLineNumber())
+	return fmt.Sprintf("%s : %d", getFuncName(2), GetLineNumber())
 }
 
 // GetStackTrace2 -

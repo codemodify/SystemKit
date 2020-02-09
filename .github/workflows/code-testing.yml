@@ -2,6 +2,7 @@ name: code-testing
 on: push
 jobs:
   code-testing:
+    name: Install Ubuntu
     runs-on: ubuntu-latest
     steps:
       - name: Install Go
