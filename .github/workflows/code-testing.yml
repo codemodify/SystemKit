@@ -4,12 +4,16 @@ jobs:
   code-testing:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@master
+      - name: Install Go
+        uses: actions/setup-go@master
         with:
           go-version: 1.13.x
 
-      - uses: actions/checkout@master
+      - name: Fetch Code
+        uses: actions/checkout@master
 
-      - run: go get -v -t -d ./...
+      - name: Fetch Dependencies
+         run: go get -v -t -d ./...
 
-      - run: go test ./...
+      - name: Run
+         run: go test ./...
