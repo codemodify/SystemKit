@@ -1,3 +1,4 @@
+name: code-benchmark
 on: push
 jobs:
   code-benchmark:

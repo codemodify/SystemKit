@@ -1,3 +1,4 @@
+name: code-coverage
 on: push
 jobs:
   code-coverage:

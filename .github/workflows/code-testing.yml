@@ -1,3 +1,4 @@
+name: code-testing
 on: push
 jobs:
   code-testing:
