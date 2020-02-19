@@ -259,6 +259,8 @@ ExecStart={{ .Executable }}
 WorkingDirectory={{ .WorkingDirectory }}
 Restart=on-failure
 Type=simple
+{{ if .StdOutPath }}StandardOutput={{ .StdOutPath }}{{ end }}
+{{ if .StdErrPath }}StandardError={{ .StdErrPath }}{{ end }}
 
 {{ if .RunAsUser }}User={{ .RunAsUser }}{{ end }}
 {{ if .RunAsGroup }}Group={{ .RunAsGroup }}{{ end }}
