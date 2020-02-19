@@ -219,6 +219,10 @@ func (thisRef *TheProcessMonitor) GetProcessInfo(id string) ProcessInfo {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
+	if _, ok := thisRef.procsInfo[id]; !ok {
+		return &processInfo{}
+	}
+
 	return thisRef.procsInfo[id]
 }
 
@@ -302,7 +306,7 @@ func readStdErrFromProc(readerCloser io.ReadCloser, process Process) {
 }
 
 func (thisRef processInfo) IsRunning() bool {
-	if thisRef.osCmd.Process == nil {
+	if thisRef.osCmd == nil || thisRef.osCmd.Process == nil {
 		return false
 	}
 
@@ -320,7 +324,7 @@ func (thisRef processInfo) IsRunning() bool {
 }
 
 func (thisRef processInfo) ExitCode() int {
-	if thisRef.osCmd.ProcessState == nil {
+	if thisRef.osCmd == nil || thisRef.osCmd.ProcessState == nil {
 		return 0
 	}
 
@@ -328,13 +332,25 @@ func (thisRef processInfo) ExitCode() int {
 }
 
 func (thisRef processInfo) StartedAt() time.Time {
+	if thisRef.osCmd == nil {
+		return time.Unix(0, 0)
+	}
+
 	return thisRef.startedAt
 }
 
 func (thisRef processInfo) StoppedAt() time.Time {
+	if thisRef.osCmd == nil {
+		return time.Unix(0, 0)
+	}
+
 	return thisRef.stoppedAt
 }
 
 func (thisRef processInfo) PID() int {
+	if thisRef.osCmd == nil {
+		return 0
+	}
+
 	return thisRef.pid
 }
