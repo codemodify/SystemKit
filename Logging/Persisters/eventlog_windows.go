@@ -41,7 +41,7 @@ func NewWindowsEventlogLogger(logUntil loggingC.LogType) loggingC.Logger {
 	if err != nil {
 		if strings.Contains(err.Error(), "registry key already exists") {
 			// SAFE to ignore
-			emergencyLogger.Error(1, fmt.Sprint("warning creating service logs: ", err))
+			// emergencyLogger.Error(1, fmt.Sprint("warning creating service logs: ", err))
 		} else {
 			emergencyLogger.Error(1, fmt.Sprint("error creating service logs: ", err))
 
