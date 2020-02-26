@@ -1,9 +1,10 @@
 package Persisters
 
 import (
-	"fmt"
+	"log"
 
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
+	"github.com/mattn/go-colorable"
 )
 
 type consoleLogger struct {
@@ -58,19 +59,21 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 		return
 	}
 
+	log.SetOutput(colorable.NewColorableStdout()) // or NewColorableStderr()
+
 	if logEntry.Type == loggingC.TypeTrace {
-		fmt.Println(thisRef.colors[loggingC.TypeTrace](logEntry.Message))
+		log.Println(thisRef.colors[loggingC.TypeTrace](logEntry.Message))
 
 	} else if logEntry.Type < loggingC.TypeWarning {
-		fmt.Println(thisRef.colors[loggingC.TypeError](logEntry.Message))
+		log.Println(thisRef.colors[loggingC.TypeError](logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeWarning {
-		fmt.Println(thisRef.colors[loggingC.TypeWarning](logEntry.Message))
+		log.Println(thisRef.colors[loggingC.TypeWarning](logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeInfo {
-		fmt.Println(thisRef.colors[loggingC.TypeInfo](logEntry.Message))
+		log.Println(thisRef.colors[loggingC.TypeInfo](logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeDebug {
-		fmt.Println(thisRef.colors[loggingC.TypeDebug](logEntry.Message))
+		log.Println(thisRef.colors[loggingC.TypeDebug](logEntry.Message))
 	}
 }
