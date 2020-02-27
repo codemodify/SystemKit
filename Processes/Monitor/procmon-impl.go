@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 	"sync"
+	"syscall"
 	"time"
 
 	helpersJSON "github.com/codemodify/SystemKit/Helpers"
@@ -171,15 +172,15 @@ func (thisRef *TheProcessMonitor) Stop(id string) error {
 			break
 		}
 
+		procInfo.osCmd.Process.Signal(syscall.SIGINT)
+		procInfo.osCmd.Process.Signal(syscall.SIGTERM)
+		procInfo.osCmd.Process.Signal(syscall.SIGKILL)
+		processKillHelper(procInfo.osCmd.Process.Pid)
+
 		err := procInfo.osCmd.Process.Kill()
 		if err != nil {
 			procInfo.err = err
 		}
-
-		// err = syscall.Kill(procInfo.osCmd.Process.Pid, syscall.SIGKILL)
-		// if err != nil {
-		// 	procInfo.err = err
-		// }
 
 		time.Sleep(500 * time.Millisecond)
 		procInfo.osCmd.Process.Wait()

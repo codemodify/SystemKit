@@ -2,14 +2,14 @@ package Helpers
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 )
 
 // AsJSONString - takes an object and outputs a JSON formatted string
 func AsJSONString(i interface{}) string {
 	bytes, err := json.Marshal(i)
 	if err != nil {
-		log.Println(err.Error())
+		return fmt.Sprintf("ERROR: AsJSONString(), details [%s]", err.Error())
 	}
 	return string(bytes)
 }
@@ -23,7 +23,7 @@ func AsJSONStringWithIndentation(i interface{}) string {
 func AsJSONStringWithCustomIndentation(i interface{}, indentation string) string {
 	bytes, err := json.MarshalIndent(i, "", indentation)
 	if err != nil {
-		log.Println(err.Error())
+		return fmt.Sprintf("ERROR: AsJSONStringWithCustomIndentation(), details [%s]", err.Error())
 	}
 	return string(bytes)
 }
