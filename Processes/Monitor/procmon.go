@@ -1,7 +1,6 @@
 package Monitor
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -27,15 +26,9 @@ type Process struct {
 	WorkingDirectory    string
 	Env                 []string
 	DelayStartInSeconds int
-	RestartRetryCount   int // -1 means unlimited
-	OnStdOut            ProcessOutputReader
-	OnStdErr            ProcessOutputReader
-}
-
-// String - stringer interface
-func (thisRef Process) String() string {
-	data, _ := json.Marshal(thisRef)
-	return string(data)
+	RestartRetryCount   int                 // -1 means unlimited
+	OnStdOut            ProcessOutputReader `json:"-"`
+	OnStdErr            ProcessOutputReader `json:"-"`
 }
 
 // ProcessInfo -

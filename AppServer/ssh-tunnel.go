@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/codemodify/SystemKit/Cryptography/gocrypto/ssh"
+	"github.com/codemodify/systemkit-cryptography/gocrypto/ssh"
 	"github.com/gorilla/mux"
 
 	logging "github.com/codemodify/SystemKit/Logging"
@@ -37,7 +37,7 @@ func NewSSHTunnelServer(sshServerConfig *ssh.ServerConfig, server IServer) IServ
 func (thisRef *SSHTunnelServer) Run(ipPort string, enableCORS bool) error {
 
 	//
-	// BASED-ON: https://godoc.org/github.com/codemodify/SystemKit/Cryptography/gocrypto/ssh#example-NewServerConn
+	// BASED-ON: https://godoc.org/github.com/codemodify/systemkit-cryptography/gocrypto/ssh#example-NewServerConn
 	//
 
 	listener, err := net.Listen("tcp4", ipPort)

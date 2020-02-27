@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
+	helpersJSON "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
 	helpersStrings "github.com/codemodify/SystemKit/Helpers"
 	logging "github.com/codemodify/SystemKit/Logging"
@@ -16,11 +16,13 @@ import (
 	processList "github.com/codemodify/SystemKit/Processes/List"
 )
 
+const procMonLogID = "PROC-MON"
+
 // TheProcessMonitor - Represents Windows service
 type TheProcessMonitor struct {
 	procs     map[string]Process
-	procsInfo map[string]*processInfo
-	procsSync sync.RWMutex
+	procsInfo map[string]processInfo
+	procsSync *sync.RWMutex
 }
 
 type processInfo struct {
@@ -35,72 +37,65 @@ type processInfo struct {
 func New() ProcessMonitor {
 	return &TheProcessMonitor{
 		procs:     map[string]Process{},
-		procsInfo: map[string]*processInfo{},
-		procsSync: sync.RWMutex{},
+		procsInfo: map[string]processInfo{},
+		procsSync: &sync.RWMutex{},
 	}
 }
 
 // Spawn -
 func (thisRef *TheProcessMonitor) Spawn(id string, process Process) error {
-	thisRef.procsSync.Lock()
-
-	thisRef.procs[id] = process
-	thisRef.procsInfo[id] = &processInfo{
-		osCmd:     exec.Command(thisRef.procs[id].Executable, thisRef.procs[id].Args...),
+	pi := processInfo{
+		osCmd:     exec.Command(process.Executable, process.Args...),
 		startedAt: time.Now(),
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to spawn: %s", id),
-	})
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to spawn details: %s", thisRef.procs[id].String()),
-	})
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to spawn CMD-WITH-ARGS: %s %s", thisRef.procs[id].Executable, strings.Join(thisRef.procs[id].Args, " ")),
+		"message": fmt.Sprintf("%s: preparing to spawn [%s], details [%s]", procMonLogID, id, helpersJSON.AsJSONString(process)),
 	})
 
 	// set working folder
-	if !helpersStrings.IsNullOrEmpty(thisRef.procs[id].WorkingDirectory) {
-		thisRef.procsInfo[id].osCmd.Dir = thisRef.procs[id].WorkingDirectory
+	if !helpersStrings.IsNullOrEmpty(process.WorkingDirectory) {
+		pi.osCmd.Dir = process.WorkingDirectory
 	}
 
 	// set env
-	if thisRef.procs[id].Env != nil {
-		thisRef.procsInfo[id].osCmd.Env = thisRef.procs[id].Env
+	if process.Env != nil {
+		pi.osCmd.Env = process.Env
 	}
 
 	// set stderr and stdout
-	stdOutPipe, err := thisRef.procsInfo[id].osCmd.StdoutPipe()
+	stdOutPipe, err := pi.osCmd.StdoutPipe()
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("failed to get StdoutPipe: %s, %v", thisRef.procs[id].Executable, err),
+			"message": fmt.Sprintf("%s: failed to get StdoutPipe for [%s], details [%v]", procMonLogID, process.Executable, err),
 		})
 
 		return err
 	}
 
-	stdErrPipe, err := thisRef.procsInfo[id].osCmd.StderrPipe()
+	stdErrPipe, err := pi.osCmd.StderrPipe()
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("failed to get StderrPipe: %s, %v", thisRef.procs[id].Executable, err),
+			"message": fmt.Sprintf("%s, failed to get StderrPipe for [%s], details [%v]", procMonLogID, process.Executable, err),
 		})
 
 		return err
 	}
 
-	if thisRef.procs[id].OnStdOut != nil {
-		go readStdOutFromProc(stdOutPipe, thisRef.procs[id])
+	if process.OnStdOut != nil {
+		go readStdOutFromProc(stdOutPipe, process)
 	}
-	if thisRef.procs[id].OnStdErr != nil {
-		go readStdErrFromProc(stdErrPipe, thisRef.procs[id])
+	if process.OnStdErr != nil {
+		go readStdErrFromProc(stdErrPipe, process)
 	}
 
+	// MODIFY
+	thisRef.procsSync.Lock()
+	thisRef.procs[id] = process
+	thisRef.procsInfo[id] = pi
 	thisRef.procsSync.Unlock()
 
 	return thisRef.Start(id)
@@ -112,28 +107,38 @@ func (thisRef *TheProcessMonitor) Start(id string) error {
 		return nil
 	}
 
-	thisRef.procsSync.RLock()
-	defer thisRef.procsSync.RUnlock()
+	thisRef.procsSync.Lock()
+	defer thisRef.procsSync.Unlock()
+
+	// CHECK-IF-EXISTS
+	if _, ok := thisRef.procsInfo[id]; !ok {
+		return fmt.Errorf("ID %s, CHECK-IF-EXISTS failed", id)
+	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to start: %s", id),
+		"message": fmt.Sprintf("%s: attempting to start [%s]", procMonLogID, id),
 	})
 
-	err := thisRef.procsInfo[id].osCmd.Start()
+	piToUpdate := thisRef.procsInfo[id]
+	delete(thisRef.procsInfo, id)
+
+	err := piToUpdate.osCmd.Start()
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("error starting: %v, details: %s", thisRef.procs[id], err),
+			"message": fmt.Sprintf("%s: error starting [%v], details [%s]", procMonLogID, thisRef.procs[id], err),
 		})
 
-		thisRef.procsInfo[id].err = err
-		thisRef.procsInfo[id].stoppedAt = time.Now()
+		piToUpdate.err = err
+		piToUpdate.stoppedAt = time.Now()
 
 		return err
 	}
 
-	thisRef.procsInfo[id].pid = thisRef.procsInfo[id].osCmd.Process.Pid
+	// MODIFY
+	piToUpdate.pid = piToUpdate.osCmd.Process.Pid
+	thisRef.procsInfo[id] = piToUpdate
 
 	return nil
 }
@@ -148,18 +153,18 @@ func (thisRef *TheProcessMonitor) Stop(id string) error {
 	procInfo := thisRef.procsInfo[id]
 	thisRef.procsSync.RUnlock()
 
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to stop: %s", id),
-	})
-
 	count := 0
+	maxStopAttempts := 20
 	for {
 		count++
+		if count > maxStopAttempts {
+			procInfo.err = fmt.Errorf("%s: can't stop [%s]", procMonLogID, id)
+			break
+		}
 
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("attempt #%d", count),
+			"message": fmt.Sprintf("%s: attempt #%d to stop [%s]", procMonLogID, count, id),
 		})
 
 		if !thisRef.GetProcessInfo(id).IsRunning() {
@@ -182,11 +187,17 @@ func (thisRef *TheProcessMonitor) Stop(id string) error {
 
 	procInfo.stoppedAt = time.Now()
 
+	// MODIFY
+	thisRef.procsSync.Lock()
+	delete(thisRef.procsInfo, id)
+	thisRef.procsInfo[id] = procInfo
+	thisRef.procsSync.Unlock()
+
 	return procInfo.err
 }
 
 // Restart -
-func (thisRef *TheProcessMonitor) Restart(id string) error {
+func (thisRef TheProcessMonitor) Restart(id string) error {
 	err := thisRef.Stop(id)
 	if err != nil {
 		return err
@@ -196,13 +207,13 @@ func (thisRef *TheProcessMonitor) Restart(id string) error {
 }
 
 // StopAll -
-func (thisRef *TheProcessMonitor) StopAll() []error {
+func (thisRef TheProcessMonitor) StopAll() []error {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("attempting to stop all"),
+		"message": fmt.Sprintf("%s: attempting to stop all", procMonLogID),
 	})
 
 	allErrors := []error{}
@@ -215,12 +226,13 @@ func (thisRef *TheProcessMonitor) StopAll() []error {
 }
 
 // GetProcessInfo -
-func (thisRef *TheProcessMonitor) GetProcessInfo(id string) ProcessInfo {
+func (thisRef TheProcessMonitor) GetProcessInfo(id string) ProcessInfo {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
+	// CHECK-IF-EXISTS
 	if _, ok := thisRef.procsInfo[id]; !ok {
-		return &processInfo{}
+		return processInfo{}
 	}
 
 	return thisRef.procsInfo[id]
@@ -241,7 +253,7 @@ func (thisRef *TheProcessMonitor) RemoveFromMonitor(id string) {
 }
 
 // GetAll -
-func (thisRef *TheProcessMonitor) GetAll() []string {
+func (thisRef TheProcessMonitor) GetAll() []string {
 	thisRef.procsSync.RLock()
 	defer thisRef.procsSync.RUnlock()
 
@@ -256,7 +268,7 @@ func (thisRef *TheProcessMonitor) GetAll() []string {
 func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("starting to read StdOut: %s", process.Executable),
+		"message": fmt.Sprintf("%s: starting to read StdOut [%s]", procMonLogID, process.Executable),
 	})
 
 	// output := make([]byte, 5000)
@@ -274,7 +286,7 @@ func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 	if err != nil {
 		logging.Instance().LogWarningWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s", err),
+			"message": fmt.Sprintf("%s: error reading StdOut [%s], details [%s]", procMonLogID, process.Executable, err.Error()),
 		})
 	}
 }
@@ -282,7 +294,7 @@ func readStdOutFromProc(readerCloser io.ReadCloser, process Process) {
 func readStdErrFromProc(readerCloser io.ReadCloser, process Process) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("starting to read StdErr: %s", process.Executable),
+		"message": fmt.Sprintf("%s: starting to read StdErr [%s]", procMonLogID, process.Executable),
 	})
 
 	// output := make([]byte, 5000)
@@ -300,7 +312,7 @@ func readStdErrFromProc(readerCloser io.ReadCloser, process Process) {
 	if err != nil {
 		logging.Instance().LogWarningWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s", err),
+			"message": fmt.Sprintf("%s: error reading StdErr [%s], details [%s]", procMonLogID, process.Executable, err.Error()),
 		})
 	}
 }
@@ -314,7 +326,7 @@ func (thisRef processInfo) IsRunning() bool {
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%v", err),
+			"message": fmt.Sprintf("%s: error finding process [%d], details [%v]", procMonLogID, thisRef.osCmd.Process.Pid, err.Error()),
 		})
 
 		return false
