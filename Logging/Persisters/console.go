@@ -60,6 +60,7 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 	}
 
 	log.SetOutput(colorable.NewColorableStdout()) // or NewColorableStderr()
+	log.SetFlags(0)
 
 	if logEntry.Type == loggingC.TypeTrace {
 		log.Println(thisRef.colors[loggingC.TypeTrace](logEntry.Message))
