@@ -19,6 +19,7 @@ func NewDefaultHelperImplmentation(logger loggingC.Logger) loggingC.EasyLogger {
 			loggingC.TypeError,
 			loggingC.TypeWarning,
 			loggingC.TypeInfo,
+			loggingC.TypeSuccess,
 			loggingC.TypeDebug,
 		},
 	}

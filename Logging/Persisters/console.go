@@ -30,6 +30,7 @@ func NewConsoleLoggerDefaultColors() map[loggingC.LogType]ConsoleLoggerColorDele
 		loggingC.TypeError:   RedString,
 		loggingC.TypeWarning: YellowString,
 		loggingC.TypeInfo:    WhiteString,
+		loggingC.TypeSuccess: GreenString,
 		loggingC.TypeDebug:   CyanString,
 	}
 }
@@ -73,6 +74,9 @@ func (thisRef consoleLogger) Log(logEntry loggingC.LogEntry) {
 
 	} else if logEntry.Type == loggingC.TypeInfo {
 		log.Println(thisRef.colors[loggingC.TypeInfo](logEntry.Message))
+
+	} else if logEntry.Type == loggingC.TypeSuccess {
+		log.Println(thisRef.colors[loggingC.TypeSuccess](logEntry.Message))
 
 	} else if logEntry.Type == loggingC.TypeDebug {
 		log.Println(thisRef.colors[loggingC.TypeDebug](logEntry.Message))
