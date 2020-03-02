@@ -1,7 +1,6 @@
 package servers
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -9,6 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"github.com/codemodify/SystemKit/Helpers/channels"
 )
 
 // WebScoketsRequestHandler -
@@ -92,10 +93,14 @@ func (thisRef *WebScoketsServer) RunOnExistingListenerAndRouter(listener net.Lis
 }
 
 func (thisRef *WebScoketsServer) setupCommunication(ws *websocket.Conn, handler *WebScoketsHandler) {
+	// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: setupCommunication - START")
+
 	thisRef.addPeer(ws)
 
-	var inChannel = make(chan []byte)
-	var outChannel = make(chan []byte)
+	var inChannel = make(chan []byte)  // data from WS
+	var outChannel = make(chan []byte) // data to WS
+
+	go handler.Handler(inChannel, outChannel)
 
 	var once sync.Once
 	closeInChannel := func() {
@@ -104,62 +109,61 @@ func (thisRef *WebScoketsServer) setupCommunication(ws *websocket.Conn, handler 
 
 	var wg sync.WaitGroup
 
-	// outChannel -> PEER
 	wg.Add(1)
 	go func() {
-		fmt.Println("SEND-TO-PEER - START")
+		// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: SEND-TO-PEER - START")
 
 		for {
 			data, readOk := <-outChannel
-			if !readOk {
+			if !readOk { // if CHANNEL closed - means communication ended by the handler
+				// DEBUG: fmt.Println(fmt.Sprint("AppServer-WebScokets-DEBUG: SEND-TO-PEER - communication ended by the handler"))
 				break
 			}
 
+			// DEBUG: fmt.Println(fmt.Sprint("AppServer-WebScokets-DEBUG: SEND-TO-PEER - DATA: ", string(data)))
+
 			err := ws.WriteMessage(websocket.TextMessage, data)
-			if err != nil {
+			if err != nil { // if can't send - means communication ended by the peer
+				// DEBUG: fmt.Println(fmt.Sprint("AppServer-WebScokets-DEBUG: SEND-TO-PEER - send - communication ended by the peer"))
 				break
 			}
 		}
 
-		fmt.Println("SEND-TO-PEER - END")
 		once.Do(closeInChannel)
+
+		// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: SEND-TO-PEER - END")
 		wg.Done()
+
 	}()
 
-	// PEER -> inChannel
 	wg.Add(1)
 	go func() {
-		fmt.Println("READ-FROM-PEER - START")
+		// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: READ-FROM-PEER - START")
 
 		for {
 			_, data, err := ws.ReadMessage()
-			if err != nil {
+			if err != nil { // if can't read - means communication ended by the peer
+				// DEBUG: fmt.Println(fmt.Sprint("AppServer-WebScokets-DEBUG: SEND-FROM-PEER - read - communication ended by the peer"))
+				once.Do(closeInChannel)
 				break
 			}
 
-			var haveToStop = false
-			select {
-			case inChannel <- []byte(data):
-			default:
-				haveToStop = true
-				break
-			}
+			// DEBUG: fmt.Println(fmt.Sprint("AppServer-WebScokets-DEBUG: READ-FROM-PEER - DATA: ", string(data)))
 
-			if haveToStop {
+			if channels.IsClosed(inChannel) {
 				break
 			}
+			inChannel <- []byte(data)
 		}
 
-		fmt.Println("READ-FROM-PEER - END")
-		once.Do(closeInChannel)
+		// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: READ-FROM-PEER - END")
 		wg.Done()
 	}()
 
-	go handler.Handler(inChannel, outChannel)
-
 	wg.Wait()
-	fmt.Println("setupCommunication - DONE")
 	thisRef.removePeer(ws)
+
+	// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: setupCommunication - DONE")
 }
 
 // SendToAllPeers -
@@ -176,12 +180,16 @@ func (thisRef *WebScoketsServer) addPeer(peer *websocket.Conn) {
 	thisRef.peersSync.Lock()
 	defer thisRef.peersSync.Unlock()
 
+	// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: addPeer")
+
 	thisRef.peers = append(thisRef.peers, peer)
 }
 
 func (thisRef *WebScoketsServer) removePeer(peer *websocket.Conn) {
 	thisRef.peersSync.Lock()
 	defer thisRef.peersSync.Unlock()
+
+	// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: removePeer")
 
 	index := -1
 	for i, conn := range thisRef.peers {
