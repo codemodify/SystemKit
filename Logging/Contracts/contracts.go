@@ -18,7 +18,8 @@ const (
 	TypeError                  // 4
 	TypeWarning                // 5
 	TypeInfo                   // 6
-	TypeDebug                  // 7
+	TypeSuccess                // 7
+	TypeDebug                  // 8
 )
 
 func (logType LogType) String() string {
@@ -37,6 +38,8 @@ func (logType LogType) String() string {
 		return "WAARN"
 	case TypeInfo:
 		return "INFOO"
+	case TypeSuccess:
+		return "SUCES"
 	case TypeDebug:
 		return "DEBUG"
 
@@ -82,6 +85,7 @@ type EasyLogger interface {
 	LogErrorWithTagAndLevel(tag string, level int, message string)
 	LogWarningWithTagAndLevel(tag string, level int, message string)
 	LogInfoWithTagAndLevel(tag string, level int, message string)
+	LogSuccessWithTagAndLevel(tag string, level int, message string)
 	LogDebugWithTagAndLevel(tag string, level int, message string)
 	LogTraceWithTagAndLevel(tag string, level int, message string)
 
@@ -90,6 +94,7 @@ type EasyLogger interface {
 	LogError(message string)
 	LogWarning(message string)
 	LogInfo(message string)
+	LogSuccess(message string)
 	LogDebug(message string)
 	LogTrace(message string)
 
@@ -98,6 +103,7 @@ type EasyLogger interface {
 	LogErrorWithFields(fields Fields)
 	LogWarningWithFields(fields Fields)
 	LogInfoWithFields(fields Fields)
+	LogSuccessWithFields(fields Fields)
 	LogDebugWithFields(fields Fields)
 	LogTraceWithFields(fields Fields)
 }

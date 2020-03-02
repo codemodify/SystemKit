@@ -47,6 +47,14 @@ func (thisRef defaultHelperImplmentation) LogInfoWithFields(fields loggingC.Fiel
 
 	thisRef.LogInfoWithTagAndLevel("", 0, string(data))
 }
+func (thisRef defaultHelperImplmentation) LogSuccessWithFields(fields loggingC.Fields) {
+	var data, err = json.Marshal(fields)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("%v", err))
+	}
+
+	thisRef.LogSuccessWithTagAndLevel("", 0, string(data))
+}
 func (thisRef defaultHelperImplmentation) LogDebugWithFields(fields loggingC.Fields) {
 	var data, err = json.Marshal(fields)
 	if err != nil {

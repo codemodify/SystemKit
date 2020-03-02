@@ -51,6 +51,15 @@ func (thisRef defaultHelperImplmentation) LogInfoWithTagAndLevel(tag string, lev
 		Message: message,
 	})
 }
+func (thisRef defaultHelperImplmentation) LogSuccessWithTagAndLevel(tag string, level int, message string) {
+	thisRef.Log(loggingC.LogEntry{
+		Time:    time.Now(),
+		Type:    loggingC.TypeSuccess,
+		Tag:     tag,
+		Level:   level,
+		Message: message,
+	})
+}
 func (thisRef defaultHelperImplmentation) LogDebugWithTagAndLevel(tag string, level int, message string) {
 	thisRef.Log(loggingC.LogEntry{
 		Time:    time.Now(),

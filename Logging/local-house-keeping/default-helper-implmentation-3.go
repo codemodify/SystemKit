@@ -15,6 +15,9 @@ func (thisRef defaultHelperImplmentation) LogWarning(message string) {
 func (thisRef defaultHelperImplmentation) LogInfo(message string) {
 	thisRef.LogInfoWithTagAndLevel("", 0, message)
 }
+func (thisRef defaultHelperImplmentation) LogSuccess(message string) {
+	thisRef.LogSuccessWithTagAndLevel("", 0, message)
+}
 func (thisRef defaultHelperImplmentation) LogDebug(message string) {
 	thisRef.LogDebugWithTagAndLevel("", 0, message)
 }

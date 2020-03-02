@@ -88,6 +88,12 @@ func (thisRef windowsEventlogLogger) Log(logEntry loggingC.LogEntry) {
 		} else {
 			thisRef.emergencyLogger.Info(1, logEntry.Message)
 		}
+	} else if logEntry.Type == loggingC.TypeSuccess {
+		if thisRef.eventlogLogger != nil {
+			thisRef.eventlogLogger.Info(1, logEntry.Message)
+		} else {
+			thisRef.emergencyLogger.Info(1, logEntry.Message)
+		}
 	} else if logEntry.Type == loggingC.TypeDebug {
 		if thisRef.eventlogLogger != nil {
 			thisRef.eventlogLogger.Info(1, logEntry.Message)
