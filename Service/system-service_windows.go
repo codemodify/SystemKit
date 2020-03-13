@@ -225,6 +225,10 @@ func (thisRef *WindowsService) Stop() error {
 		"message": fmt.Sprintf("%s: attempting to stop: %s", logTag, thisRef.command.Name),
 	})
 
+	if thisRef.command.OnStopDelegate != nil {
+		thisRef.command.OnStopDelegate()
+	}
+
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
@@ -398,10 +402,6 @@ loop:
 				changes <- c.CurrentStatus
 
 			case svc.Stop, svc.Shutdown:
-
-				if thisRef.command.OnStopDelegate != nil {
-					go thisRef.command.OnStopDelegate()
-				}
 
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
 				testOutput := strings.Join(args, "-")
