@@ -19,7 +19,7 @@ import (
 )
 
 // *WindowsService - Represents Windows service
-type *WindowsService struct {
+type WindowsService struct {
 	command ServiceCommand
 }
 
