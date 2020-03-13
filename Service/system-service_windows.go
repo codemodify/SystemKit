@@ -222,13 +222,15 @@ func (thisRef *WindowsService) Restart() error {
 func (thisRef *WindowsService) Stop() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("%s: attempting to stop: ", logTag, thisRef.command.Name),
+		"message": fmt.Sprintf("%s: attempting to stop: %s", logTag, thisRef.command.Name),
 	})
 
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
 		if strings.Contains(e, "service does not exist") {
+			return nil
+		} else if strings.Contains(e, "service has not been started") {
 			return nil
 		}
 
