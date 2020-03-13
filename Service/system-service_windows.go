@@ -396,8 +396,7 @@ loop:
 			case svc.Stop, svc.Shutdown:
 
 				if thisRef.command.OnStopDelegate != nil {
-					thisRef.command.OnStopDelegate()
-					thisRef.command.OnStopDelegate = nil
+					go thisRef.command.OnStopDelegate()
 				}
 
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
