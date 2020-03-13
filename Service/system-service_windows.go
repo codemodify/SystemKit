@@ -18,14 +18,14 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
-// *WindowsService - Represents Windows service
+// WindowsService - Represents Windows service
 type WindowsService struct {
 	command ServiceCommand
 }
 
 // New -
 func New(command ServiceCommand) SystemService {
-	return &*WindowsService{
+	return &WindowsService{
 		command: command,
 	}
 }
