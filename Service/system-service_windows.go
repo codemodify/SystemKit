@@ -217,7 +217,7 @@ func (thisRef *WindowsService) Restart() error {
 }
 
 // Stop -
-func (thisRef **WindowsService) Stop() error {
+func (thisRef *WindowsService) Stop() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("attempting to stop: ", thisRef.command.Name),
