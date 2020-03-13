@@ -42,7 +42,7 @@ func (thisRef *WindowsService) Run() error {
 	wg.Add(1)
 	var err error
 	go func() {
-		err = svc.Run(thisRef.command.Name, &thisRef)
+		err = svc.Run(thisRef.command.Name, thisRef)
 		wg.Done()
 	}()
 
