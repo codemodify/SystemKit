@@ -12,6 +12,7 @@ type SystemService interface {
 	Start() error
 	Restart() error
 	Stop() error
+	StopWithDelegate(onStopDelegate func()) error
 	Uninstall() error
 	Status() (ServiceStatus, error)
 	Exists() bool

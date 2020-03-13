@@ -18,20 +18,25 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
-// WindowsService - Represents Windows service
-type WindowsService struct {
+// *WindowsService - Represents Windows service
+type *WindowsService struct {
 	command ServiceCommand
+
+	onStopDelegate     func()
+	onStopDelegateSync *sync.RWMutex
 }
 
 // New -
 func New(command ServiceCommand) SystemService {
-	return &WindowsService{
-		command: command,
+	return &*WindowsService{
+		command:            command,
+		onStopDelegate:     nil,
+		onStopDelegateSync: &sync.RWMutex{},
 	}
 }
 
 // Run -
-func (thisRef WindowsService) Run() error {
+func (thisRef *WindowsService) Run() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("attempting to run: %s", thisRef.command.Name),
@@ -68,7 +73,7 @@ func (thisRef WindowsService) Run() error {
 }
 
 // Install -
-func (thisRef WindowsService) Install(start bool) error {
+func (thisRef *WindowsService) Install(start bool) error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("attempting to install: %s", thisRef.command.Name),
@@ -172,7 +177,7 @@ func (thisRef WindowsService) Install(start bool) error {
 }
 
 // Start -
-func (thisRef WindowsService) Start() error {
+func (thisRef *WindowsService) Start() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("attempting to start: ", thisRef.command.Name),
@@ -204,7 +209,7 @@ func (thisRef WindowsService) Start() error {
 }
 
 // Restart -
-func (thisRef WindowsService) Restart() error {
+func (thisRef *WindowsService) Restart() error {
 	if err := thisRef.Stop(); err != nil {
 		return err
 	}
@@ -217,11 +222,15 @@ func (thisRef WindowsService) Restart() error {
 }
 
 // Stop -
-func (thisRef WindowsService) Stop() error {
+func (thisRef **WindowsService) Stop(onStopDelegate func()) error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("attempting to stop: ", thisRef.command.Name),
 	})
+
+	thisRef.onStopDelegateSync.Lock()
+	thisRef.onStopDelegate = onStopDelegate
+	thisRef.onStopDelegateSync.Unlock()
 
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
@@ -267,7 +276,7 @@ func (thisRef WindowsService) Stop() error {
 }
 
 // Uninstall -
-func (thisRef WindowsService) Uninstall() error {
+func (thisRef *WindowsService) Uninstall() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("attempting to uninstall: %s", thisRef.command.Name),
@@ -299,7 +308,7 @@ func (thisRef WindowsService) Uninstall() error {
 }
 
 // Status -
-func (thisRef WindowsService) Status() (ServiceStatus, error) {
+func (thisRef *WindowsService) Status() (ServiceStatus, error) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("querying status: %s", thisRef.command.Name),
@@ -334,7 +343,7 @@ func (thisRef WindowsService) Status() (ServiceStatus, error) {
 }
 
 // Exists -
-func (thisRef WindowsService) Exists() bool {
+func (thisRef *WindowsService) Exists() bool {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("checking existance: %s", thisRef.command.Name),
@@ -362,17 +371,17 @@ func (thisRef WindowsService) Exists() bool {
 }
 
 // FilePath -
-func (thisRef WindowsService) FilePath() string {
+func (thisRef *WindowsService) FilePath() string {
 	return ""
 }
 
 // FileContent -
-func (thisRef WindowsService) FileContent() ([]byte, error) {
+func (thisRef *WindowsService) FileContent() ([]byte, error) {
 	return []byte{}, nil
 }
 
 // Execute - implement the Windows `service.Handler` interface
-func (thisRef WindowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
+func (thisRef *WindowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("WINDOWS SERVICE EXECUTE"),
@@ -394,6 +403,14 @@ loop:
 				changes <- c.CurrentStatus
 
 			case svc.Stop, svc.Shutdown:
+
+				thisRef.onStopDelegateSync.Lock()
+				defer thisRef.onStopDelegateSync.Unlock()
+				if thisRef.onStopDelegate != nil {
+					thisRef.onStopDelegate()
+					thisRef.onStopDelegate = nil
+				}
+
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
 				testOutput := strings.Join(args, "-")
 				testOutput += fmt.Sprintf("-%d", c.Context)
@@ -423,7 +440,7 @@ loop:
 	return
 }
 
-func (thisRef WindowsService) control(command svc.Cmd, state svc.State) error {
+func (thisRef *WindowsService) control(command svc.Cmd, state svc.State) error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("attempting to control: %s", thisRef.command.Name),
