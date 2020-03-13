@@ -229,6 +229,11 @@ func (thisRef *WindowsService) Stop() error {
 		thisRef.command.OnStopDelegate()
 	}
 
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: OnStopDelegate called: %s", logTag, thisRef.command.Name),
+	})
+
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
@@ -237,6 +242,11 @@ func (thisRef *WindowsService) Stop() error {
 		} else if strings.Contains(e, "service has not been started") {
 			return nil
 		}
+
+		logging.Instance().LogErrorWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprintf("%s: error %s, details: %s", logTag, thisRef.command.Name, err.Error()),
+		})
 
 		return err
 	}
@@ -270,6 +280,11 @@ func (thisRef *WindowsService) Stop() error {
 			return errors.New("could not stop system service after multiple attempts")
 		}
 	}
+
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: stopped: %s", logTag, thisRef.command.Name),
+	})
 
 	return nil
 }
