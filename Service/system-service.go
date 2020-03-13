@@ -12,7 +12,6 @@ type SystemService interface {
 	Start() error
 	Restart() error
 	Stop() error
-	StopWithDelegate(onStopDelegate func()) error
 	Uninstall() error
 	Status() (ServiceStatus, error)
 	Exists() bool
@@ -40,6 +39,7 @@ type ServiceCommand struct {
 	StartDelayInSeconds int
 	RunAsUser           string
 	RunAsGroup          string
+	OnStopDelegate      func()
 }
 
 func (thisRef ServiceCommand) String() string {

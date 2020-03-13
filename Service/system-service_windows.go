@@ -21,17 +21,12 @@ import (
 // *WindowsService - Represents Windows service
 type *WindowsService struct {
 	command ServiceCommand
-
-	onStopDelegate     func()
-	onStopDelegateSync *sync.RWMutex
 }
 
 // New -
 func New(command ServiceCommand) SystemService {
 	return &*WindowsService{
-		command:            command,
-		onStopDelegate:     nil,
-		onStopDelegateSync: &sync.RWMutex{},
+		command: command,
 	}
 }
 
@@ -222,15 +217,11 @@ func (thisRef *WindowsService) Restart() error {
 }
 
 // Stop -
-func (thisRef **WindowsService) Stop(onStopDelegate func()) error {
+func (thisRef **WindowsService) Stop() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("attempting to stop: ", thisRef.command.Name),
 	})
-
-	thisRef.onStopDelegateSync.Lock()
-	thisRef.onStopDelegate = onStopDelegate
-	thisRef.onStopDelegateSync.Unlock()
 
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
@@ -404,11 +395,9 @@ loop:
 
 			case svc.Stop, svc.Shutdown:
 
-				thisRef.onStopDelegateSync.Lock()
-				defer thisRef.onStopDelegateSync.Unlock()
-				if thisRef.onStopDelegate != nil {
-					thisRef.onStopDelegate()
-					thisRef.onStopDelegate = nil
+				if thisRef.command.OnStopDelegate != nil {
+					thisRef.command.OnStopDelegate()
+					thisRef.command.OnStopDelegate = nil
 				}
 
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
