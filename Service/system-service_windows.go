@@ -226,8 +226,6 @@ func (thisRef *WindowsService) Stop() error {
 	})
 
 	if thisRef.command.OnStopDelegate != nil {
-		logger.Debug("ACTUAL: OnStopDelegate() beferring-calling")
-
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
 			"message": fmt.Sprintf("%s: OnStopDelegate beferring-calling: %s", logTag, thisRef.command.Name),
