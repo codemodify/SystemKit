@@ -226,13 +226,18 @@ func (thisRef *WindowsService) Stop() error {
 	})
 
 	if thisRef.command.OnStopDelegate != nil {
-		thisRef.command.OnStopDelegate()
-	}
+		logging.Instance().LogDebugWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprintf("%s: OnStopDelegate calling: %s", logTag, thisRef.command.Name),
+		})
 
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("%s: OnStopDelegate called: %s", logTag, thisRef.command.Name),
-	})
+		thisRef.command.OnStopDelegate()
+
+		logging.Instance().LogDebugWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprintf("%s: OnStopDelegate called: %s", logTag, thisRef.command.Name),
+		})
+	}
 
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
