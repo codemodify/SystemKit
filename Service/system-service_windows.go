@@ -177,7 +177,7 @@ func (thisRef *WindowsService) Install(start bool) error {
 func (thisRef *WindowsService) Start() error {
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("%s: attempting to start: ", logTag, thisRef.command.Name),
+		"message": fmt.Sprintf("%s: attempting to start: ", logTag, thisRef.command.Name),
 	})
 
 	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
@@ -226,16 +226,18 @@ func (thisRef *WindowsService) Stop() error {
 	})
 
 	if thisRef.command.OnStopDelegate != nil {
+		logger.Debug("ACTUAL: OnStopDelegate() beferring-calling")
+
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: OnStopDelegate calling: %s", logTag, thisRef.command.Name),
+			"message": fmt.Sprintf("%s: OnStopDelegate beferring-calling: %s", logTag, thisRef.command.Name),
 		})
 
 		thisRef.command.OnStopDelegate()
 
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: OnStopDelegate called: %s", logTag, thisRef.command.Name),
+			"message": fmt.Sprintf("%s: OnStopDelegate after-calling: %s", logTag, thisRef.command.Name),
 		})
 	}
 
@@ -264,7 +266,7 @@ func (thisRef *WindowsService) Stop() error {
 
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("%s: waiting for service to stop", logTag),
+			"message": fmt.Sprintf("%s: waiting for service to stop", logTag),
 		})
 
 		// Wait a few seconds before retrying
@@ -423,16 +425,26 @@ loop:
 
 			case svc.Stop, svc.Shutdown:
 				if thisRef.command.OnStopDelegate != nil {
+					logging.Instance().LogDebugWithFields(loggingC.Fields{
+						"method":  helpersReflect.GetThisFuncName(),
+						"message": fmt.Sprintf("%s: OnStopDelegate beferring-calling: %s", logTag, thisRef.command.Name),
+					})
+
 					go thisRef.command.OnStopDelegate()
+
+					logging.Instance().LogDebugWithFields(loggingC.Fields{
+						"method":  helpersReflect.GetThisFuncName(),
+						"message": fmt.Sprintf("%s: OnStopDelegate after-calling: %s", logTag, thisRef.command.Name),
+					})
 				}
 
 				// golang.org/x/sys/windows/svc.TestExample is verifying this output.
-				testOutput := strings.Join(args, "-")
-				testOutput += fmt.Sprintf("-%d", c.Context)
-				logging.Instance().LogDebugWithFields(loggingC.Fields{
-					"method":  helpersReflect.GetThisFuncName(),
-					"message": fmt.Sprintf("%s: %", logTag, testOutput),
-				})
+				// testOutput := strings.Join(args, "-")
+				// testOutput += fmt.Sprintf("-%d", c.Context)
+				// logging.Instance().LogDebugWithFields(loggingC.Fields{
+				// 	"method":  helpersReflect.GetThisFuncName(),
+				// 	"message": fmt.Sprintf("%s: %", logTag, testOutput),
+				// })
 
 				break loop
 
