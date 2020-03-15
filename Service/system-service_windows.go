@@ -228,7 +228,7 @@ func (thisRef *WindowsService) Stop() error {
 	if thisRef.command.OnStopDelegate != nil {
 		logging.Instance().LogDebugWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: OnStopDelegate beferring-calling: %s", logTag, thisRef.command.Name),
+			"message": fmt.Sprintf("%s: OnStopDelegate before-calling: %s", logTag, thisRef.command.Name),
 		})
 
 		thisRef.command.OnStopDelegate()
@@ -425,7 +425,7 @@ loop:
 				if thisRef.command.OnStopDelegate != nil {
 					logging.Instance().LogDebugWithFields(loggingC.Fields{
 						"method":  helpersReflect.GetThisFuncName(),
-						"message": fmt.Sprintf("%s: OnStopDelegate beferring-calling: %s", logTag, thisRef.command.Name),
+						"message": fmt.Sprintf("%s: OnStopDelegate before-calling: %s", logTag, thisRef.command.Name),
 					})
 
 					go thisRef.command.OnStopDelegate()
