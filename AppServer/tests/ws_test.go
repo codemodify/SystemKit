@@ -42,8 +42,8 @@ func NewWebSocketTransport(port int, messageEventHandler OnMessageEventHandler) 
 }
 
 func (thisRef WebSocketTransport) Serve() error {
-	thisRef.server = appS.NewWebScoketsServer([]appS.WebScoketsHandler{
-		appS.WebScoketsHandler{
+	thisRef.server = appS.NewWebSocketsServer([]appS.WebSocketsHandler{
+		appS.WebSocketsHandler{
 			Route:   "/",
 			Handler: thisRef.rawRequestHandler,
 		},

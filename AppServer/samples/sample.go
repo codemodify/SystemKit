@@ -148,8 +148,8 @@ func main() {
 				Handler:  jsonRequestHandler,
 			},
 		}),
-		jm.NewWebScoketsServer([]jm.WebScoketsHandler{
-			jm.WebScoketsHandler{
+		jm.NewWebSocketsServer([]jm.WebSocketsHandler{
+			jm.WebSocketsHandler{
 				Route:   "/StreamTelemetry",
 				Handler: streamTelemetryRequestHandler,
 			},

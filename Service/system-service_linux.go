@@ -140,8 +140,13 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "stopping unit file with systemd",
 	})
-	_, err = runSystemCtlCommand("stop", thisRef.command.Name)
+
+	output, err := runSystemCtlCommand("stop", thisRef.command.Name)
 	if err != nil {
+		if strings.Contains(output, "Failed to stop") && strings.Contains(output, "not loaded") {
+			return ErrServiceDoesNotExist
+		}
+
 		return err
 	}
 
@@ -149,15 +154,19 @@ func (thisRef LinuxService) Stop() error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "disabling unit file with systemd",
 	})
-	_, err = runSystemCtlCommand("disable", thisRef.command.Name)
+	output, err = runSystemCtlCommand("disable", thisRef.command.Name)
 	if err != nil {
-		if strings.Contains(err.Error(), "Removed") {
-			logging.Instance().LogDebugWithFields(loggingC.Fields{
-				"method":  helpersReflect.GetThisFuncName(),
-				"message": "ignoring remove symlink error",
-			})
+		logging.Instance().LogWarningWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": "stopping unit file with systemd",
+		})
+
+		if strings.Contains(output, "Failed to disable") && strings.Contains(output, "does not exist") {
+			return ErrServiceDoesNotExist
+		} else if strings.Contains(output, "Removed") {
 			return nil
 		}
+
 		return err
 	}
 

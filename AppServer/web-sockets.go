@@ -15,28 +15,28 @@ import (
 // WebScoketsRequestHandler -
 type WebScoketsRequestHandler func(inChannel chan []byte, outChannel chan []byte)
 
-// WebScoketsHandler -
-type WebScoketsHandler struct {
+// WebSocketsHandler -
+type WebSocketsHandler struct {
 	Route   string
 	Handler WebScoketsRequestHandler
 }
 
 // WebScoketsServer -
 type WebScoketsServer struct {
-	handlers       []WebScoketsHandler
-	routeToHandler map[string]WebScoketsHandler
+	handlers       []WebSocketsHandler
+	routeToHandler map[string]WebSocketsHandler
 	HTTPServer     IServer
 	peers          []*websocket.Conn
 	peersSync      sync.RWMutex
 	enableCORS     bool
 }
 
-// NewWebScoketsServer -
-func NewWebScoketsServer(handlers []WebScoketsHandler) IServer {
+// NewWebSocketsServer -
+func NewWebSocketsServer(handlers []WebSocketsHandler) IServer {
 
 	var thisRef = &WebScoketsServer{
 		handlers:       handlers,
-		routeToHandler: map[string]WebScoketsHandler{},
+		routeToHandler: map[string]WebSocketsHandler{},
 		HTTPServer:     nil,
 		peers:          []*websocket.Conn{},
 		peersSync:      sync.RWMutex{},
@@ -45,7 +45,7 @@ func NewWebScoketsServer(handlers []WebScoketsHandler) IServer {
 	var lowLevelRequestHelper = func(rw http.ResponseWriter, r *http.Request) {
 		r.Header["Origin"] = nil
 
-		var handler WebScoketsHandler = thisRef.routeToHandler[r.URL.Path]
+		var handler WebSocketsHandler = thisRef.routeToHandler[r.URL.Path]
 
 		var upgrader = websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool { return thisRef.enableCORS },
@@ -92,7 +92,7 @@ func (thisRef *WebScoketsServer) RunOnExistingListenerAndRouter(listener net.Lis
 	thisRef.HTTPServer.RunOnExistingListenerAndRouter(listener, router, enableCORS)
 }
 
-func (thisRef *WebScoketsServer) setupCommunication(ws *websocket.Conn, handler *WebScoketsHandler) {
+func (thisRef *WebScoketsServer) setupCommunication(ws *websocket.Conn, handler *WebSocketsHandler) {
 	// DEBUG: fmt.Println("AppServer-WebScokets-DEBUG: setupCommunication - START")
 
 	thisRef.addPeer(ws)

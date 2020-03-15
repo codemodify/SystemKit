@@ -51,16 +51,12 @@ func ExecInFolder(command string, folder string) (string, error) {
 		cmd.Dir = folder
 	}
 
-	bytes, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(bytes), err
-	}
-
-	return string(bytes), nil
+	output, err := cmd.CombinedOutput()
+	return string(output), err
 }
 
 // ExecWithArgs -
 func ExecWithArgs(name string, args ...string) (out string, err error) {
-	stdout, err := exec.Command(name, args...).Output()
-	return string(stdout), err
+	output, err := exec.Command(name, args...).CombinedOutput()
+	return string(output), err
 }
