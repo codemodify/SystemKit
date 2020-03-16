@@ -5,51 +5,35 @@ import (
 	"sync"
 )
 
-var eventManagerWithDataInstance *EventManagerWithData
-var eventManagerWithDataSync sync.Once
+var eventManagerWithDataOnceInstance *EventManagerWithDataOnce
+var eventManagerWithDataOnceSync sync.Once
 
-// EventHandlerWithData - eventWithData handler prototype
-type EventHandlerWithData func([]byte)
-
-type eventWithData struct {
-	subscribers  []EventHandlerWithData
-	lastData     []byte
-	happenedOnce bool
-}
-
-// EventManagerWithData - eventWithData manager
-type EventManagerWithData struct {
+// EventManagerWithDataOnce - eventWithData manager
+type EventManagerWithDataOnce struct {
 	events     map[string]*eventWithData
 	eventsSync sync.RWMutex
 }
 
-// EventsWithData - Singleton to get the events manager instance
-func EventsWithData() *EventManagerWithData {
-	eventManagerWithDataSync.Do(func() {
-		eventManagerWithDataInstance = &EventManagerWithData{
+// EventsWithDataOnce - Singleton to get the events manager instance
+func EventsWithDataOnce() *EventManagerWithDataOnce {
+	eventManagerWithDataOnceSync.Do(func() {
+		eventManagerWithDataOnceInstance = &EventManagerWithDataOnce{
 			events:     make(map[string]*eventWithData),
 			eventsSync: sync.RWMutex{},
 		}
 	})
 
-	return eventManagerWithDataInstance
+	return eventManagerWithDataOnceInstance
 }
 
-// On - Tells EventManagerWithData to add a subscriber for an eventWithData
-func (thisRef *EventManagerWithData) On(eventName string, eventHandler EventHandlerWithData) {
+// On - Tells EventManagerWithDataOnce to add a subscriber for an eventWithData
+func (thisRef *EventManagerWithDataOnce) On(eventName string, eventHandler EventHandlerWithData) {
 	thisRef.addEventIfNotExists(eventName)
 	thisRef.addSubscriberIfNotExists(eventName, eventHandler)
-
-	// thisRef.eventsSync.RLock()
-	// defer thisRef.eventsSync.RUnlock()
-
-	// if thisRef.events[eventName].happenedOnce {
-	// 	go eventHandler(thisRef.events[eventName].lastData)
-	// }
 }
 
-// Off - Tells EventManagerWithData to remove a subscriber for an eventWithData
-func (thisRef *EventManagerWithData) Off(eventName string, eventHandler EventHandlerWithData) {
+// Off - Tells EventManagerWithDataOnce to remove a subscriber for an eventWithData
+func (thisRef *EventManagerWithDataOnce) off(eventName string, eventHandler EventHandlerWithData) {
 	thisRef.addEventIfNotExists(eventName)
 
 	thisRef.eventsSync.RLock()
@@ -72,7 +56,7 @@ func (thisRef *EventManagerWithData) Off(eventName string, eventHandler EventHan
 }
 
 // Raise - Informs all subscribers about the eventWithData
-func (thisRef *EventManagerWithData) Raise(eventName string, data []byte) {
+func (thisRef *EventManagerWithDataOnce) Raise(eventName string, data []byte) {
 	thisRef.addEventIfNotExists(eventName)
 
 	thisRef.eventsSync.RLock()
@@ -82,10 +66,11 @@ func (thisRef *EventManagerWithData) Raise(eventName string, data []byte) {
 	thisRef.events[eventName].lastData = data
 	for _, eventHandler := range thisRef.events[eventName].subscribers {
 		go eventHandler(data)
+		go thisRef.off(eventName, eventHandler)
 	}
 }
 
-func (thisRef *EventManagerWithData) addEventIfNotExists(eventName string) {
+func (thisRef *EventManagerWithDataOnce) addEventIfNotExists(eventName string) {
 	thisRef.eventsSync.Lock()
 	defer thisRef.eventsSync.Unlock()
 
@@ -97,7 +82,7 @@ func (thisRef *EventManagerWithData) addEventIfNotExists(eventName string) {
 	}
 }
 
-func (thisRef *EventManagerWithData) addSubscriberIfNotExists(eventName string, eventHandler EventHandlerWithData) bool {
+func (thisRef *EventManagerWithDataOnce) addSubscriberIfNotExists(eventName string, eventHandler EventHandlerWithData) bool {
 	thisRef.eventsSync.RLock()
 	defer thisRef.eventsSync.RUnlock()
 

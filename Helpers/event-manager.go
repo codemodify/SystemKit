@@ -6,7 +6,7 @@ import (
 )
 
 var eventManagerInstance *EventManager
-var eventManagerOnce sync.Once
+var eventManagerSync sync.Once
 
 // EventHandler - event handler prototype
 type EventHandler func()
@@ -24,7 +24,7 @@ type EventManager struct {
 
 // Events - Singleton to get the events manager instance
 func Events() *EventManager {
-	eventManagerOnce.Do(func() {
+	eventManagerSync.Do(func() {
 		eventManagerInstance = &EventManager{
 			events:     make(map[string]*event),
 			eventsSync: sync.RWMutex{},
@@ -39,12 +39,12 @@ func (thisRef *EventManager) On(eventName string, eventHandler EventHandler) {
 	thisRef.addEventIfNotExists(eventName)
 	thisRef.addSubscriberIfNotExists(eventName, eventHandler)
 
-	thisRef.eventsSync.RLock()
-	defer thisRef.eventsSync.RUnlock()
+	// thisRef.eventsSync.RLock()
+	// defer thisRef.eventsSync.RUnlock()
 
-	if thisRef.events[eventName].happenedOnce {
-		go eventHandler()
-	}
+	// if thisRef.events[eventName].happenedOnce {
+	// 	go eventHandler()
+	// }
 }
 
 // Off - Tells EventManager to remove a subscriber for an event
