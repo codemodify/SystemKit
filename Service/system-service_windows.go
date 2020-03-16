@@ -209,12 +209,14 @@ func (thisRef *WindowsService) Start() error {
 	// 2.
 	err := winService.Start()
 	if err != nil {
-		logging.Instance().LogErrorWithFields(loggingC.Fields{
-			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, err),
-		})
+		if !strings.Contains(err.Error(), "already running") {
+			logging.Instance().LogErrorWithFields(loggingC.Fields{
+				"method":  helpersReflect.GetThisFuncName(),
+				"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, aaaa),
+			})
 
-		return fmt.Errorf("error starting: %s, %v", thisRef.command.Name, err)
+			return fmt.Errorf("error starting: %s, %v", thisRef.command.Name, err)
+		}
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
