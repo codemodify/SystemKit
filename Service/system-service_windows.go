@@ -185,9 +185,7 @@ func (thisRef *WindowsService) Install(start bool) error {
 
 	// 3. start if needed
 	if start {
-		if err := thisRef.Start(); err != nil {
-			return err
-		}
+		return thisRef.Start()
 	}
 
 	return nil

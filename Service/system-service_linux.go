@@ -40,8 +40,7 @@ func (thisRef LinuxService) Run() error {
 
 // Install -
 func (thisRef LinuxService) Install(start bool) error {
-	path := thisRef.FilePath()
-	dir := filepath.Dir(path)
+	dir := filepath.Dir(thisRef.FilePath())
 
 	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
@@ -55,31 +54,28 @@ func (thisRef LinuxService) Install(start bool) error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("generating unit file"),
 	})
-	content, err := thisRef.FileContent()
+	fileContent, err := thisRef.FileContent()
 	if err != nil {
 		return err
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("writing unit to: ", path),
+		"message": fmt.Sprint("writing unit to: ", thisRef.FilePath()),
 	})
-	err = ioutil.WriteFile(path, content, 0644)
+	err = ioutil.WriteFile(thisRef.FilePath(), fileContent, 0644)
 	if err != nil {
 		return err
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("wrote unit: %s", string(content)),
+		"message": fmt.Sprintf("wrote unit: %s", string(fileContent)),
 	})
 
 	// 3.
 	if start {
-		err = thisRef.Start()
-		if err != nil && !helpersErrors.Is(err, ErrServiceDoesNotExist) {
-			return err
-		}
+		return thisRef.Start()
 	}
 
 	return nil
@@ -130,8 +126,7 @@ func (thisRef LinuxService) Start() error {
 
 // Restart -
 func (thisRef LinuxService) Restart() error {
-	err := thisRef.Stop()
-	if err != nil {
+	if err := thisRef.Stop(); err != nil {
 		return err
 	}
 
@@ -211,12 +206,18 @@ func (thisRef LinuxService) Stop() error {
 // Uninstall -
 func (thisRef LinuxService) Uninstall() error {
 	// 1.
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: attempting to uninstall: %s", logTag, thisRef.command.Name),
+	})
+
+	// 2.
 	err := thisRef.Stop()
 	if err != nil && !helpersErrors.Is(err, ErrServiceDoesNotExist) {
 		return err
 	}
 
-	// 2.
+	// 3.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "remove unit file",

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	helpersErrors "github.com/codemodify/SystemKit/Helpers"
 	helpersExec "github.com/codemodify/SystemKit/Helpers"
 	helpersFiles "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
@@ -20,13 +21,15 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
+var logTag = "SYSTEM-SERVICE"
+
 // MacOSService - Represents Mac OS Service service
 type MacOSService struct {
-	command ServiceCommand
+	command Command
 }
 
 // New -
-func New(command ServiceCommand) SystemService {
+func New(command Command) SystemService {
 	// override some values - platform specific
 	// https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
 	logDir := filepath.Join(helpersUser.HomeDir(""), "Library/Logs", command.Name)
@@ -53,12 +56,15 @@ func (thisRef MacOSService) Run() error {
 // Install -
 func (thisRef MacOSService) Install(start bool) error {
 	dir := filepath.Dir(thisRef.FilePath())
+
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("making sure folder exists: ", dir),
 	})
 	os.MkdirAll(dir, os.ModePerm)
 
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("generating plist file"),
@@ -77,11 +83,14 @@ func (thisRef MacOSService) Install(start bool) error {
 		return err
 	}
 
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("wrote unit: %s", string(fileContent)),
+	})
+
+	// 3.
 	if start {
-		err := thisRef.Start()
-		if err != nil {
-			return err
-		}
+		return thisRef.Start()
 	}
 
 	return nil
@@ -89,113 +98,65 @@ func (thisRef MacOSService) Install(start bool) error {
 
 // Start -
 func (thisRef MacOSService) Start() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("loading plist with launchctl"),
 	})
-
-	cmd := "launchctl"
-	args := []string{"load", "-w", thisRef.FilePath()}
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
-	})
-	_, err := helpersExec.ExecWithArgs(cmd, args...)
-	if err != nil {
-		e := strings.ToLower(err.Error())
-
-		// If not installed, install the service and then run start again.
-		if strings.Contains(e, "no such file or directory") {
-			logging.Instance().LogDebugWithFields(loggingC.Fields{
-				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("service not installed yet, installing..."),
-			})
-
-			err = thisRef.Install(true)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		// We don't care if the process fails because it is already
-		// loaded
-		if strings.Contains(e, "service already loaded") {
-			logging.Instance().LogDebugWithFields(loggingC.Fields{
-				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("service already loaded"),
-			})
-			return nil
-		}
-
-		return err
+	output, _ := runLaunchCtlCommand("load", "-w", thisRef.FilePath())
+	if strings.Contains(output, "No such file or directory") {
+		return ErrServiceDoesNotExist
 	}
 
+	// We don't care if the process fails because it is already loaded
+	if strings.Contains(output, "service already loaded") {
+		logging.Instance().LogDebugWithFields(loggingC.Fields{
+			"method":  helpersReflect.GetThisFuncName(),
+			"message": fmt.Sprint("service already loaded"),
+		})
+
+		return nil
+	}
+
+	runLaunchCtlCommand("start", thisRef.command.Name)
 	return nil
 }
 
 // Restart -
 func (thisRef MacOSService) Restart() error {
-	err := thisRef.Stop()
-
-	if err != nil {
+	if err := thisRef.Stop(); err != nil {
 		return err
 	}
 
-	err = thisRef.Start()
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return thisRef.Start()
 }
 
 // Stop -
 func (thisRef MacOSService) Stop() error {
-	cmd := "launchctl"
-	args := []string{"unload", "-w", thisRef.FilePath()}
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
-	})
-	_, err := helpersExec.ExecWithArgs(cmd, args...)
-	if err != nil {
-		e := strings.ToLower(err.Error())
-
-		if strings.Contains(e, "could not find specified service") {
-			logging.Instance().LogDebugWithFields(loggingC.Fields{
-				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("no service matching plist running: ", thisRef.command.DisplayLabel),
-			})
-			return nil
-		}
-
-		if strings.Contains(e, "no such file or directory") {
-			logging.Instance().LogDebugWithFields(loggingC.Fields{
-				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprint("plist file doesn't exist, nothing to stop: ", thisRef.command.DisplayLabel),
-			})
-			return nil
-		}
-
-		return err
+	runLaunchCtlCommand("stop", thisRef.command.Name)
+	output, err := runLaunchCtlCommand("unload", thisRef.FilePath())
+	if strings.Contains(output, "Could not find specified service") {
+		return ErrServiceDoesNotExist
 	}
 
-	return nil
+	return err
 }
 
 // Uninstall -
 func (thisRef MacOSService) Uninstall() error {
+	// 1.
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: attempting to uninstall: %s", logTag, thisRef.command.Name),
+	})
+
+	// 2.
 	err := thisRef.Stop()
-	if err != nil {
-		// If there is no matching process, don't throw an error
-		// as it is already stopped.
-		if strings.Contains(err.Error(), "exit status 3") != true {
-			return err
-		}
+	if err != nil && !helpersErrors.Is(err, ErrServiceDoesNotExist) {
+		return err
 	}
 
+	// 3.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("remove plist file"),
@@ -209,19 +170,8 @@ func (thisRef MacOSService) Uninstall() error {
 		return err
 	}
 
-	// sudo launchctl
-	cmd := "launchctl"
-	args := []string{"remove", thisRef.command.Name}
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
-	})
-	_, err = helpersExec.ExecWithArgs(cmd, args...)
+	_, err = runLaunchCtlCommand("remove")
 	if err != nil {
-		logging.Instance().LogErrorWithFields(loggingC.Fields{
-			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("error getting launchctl status: ", err),
-		})
 		return err
 	}
 
@@ -229,52 +179,51 @@ func (thisRef MacOSService) Uninstall() error {
 }
 
 // Status -
-func (thisRef MacOSService) Status() (ServiceStatus, error) {
-	cmd := "launchctl"
-	args := []string{"list"}
-	logging.Instance().LogDebugWithFields(loggingC.Fields{
-		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("RUNNING: %s %s", cmd, strings.Join(args, " ")),
-	})
-	list, err := helpersExec.ExecWithArgs(cmd, args...)
+func (thisRef MacOSService) Status() Status {
+	output, err := runLaunchCtlCommand("list")
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
 			"message": fmt.Sprint("error getting launchctl status: ", err),
 		})
-		return ServiceStatus{}, err
+		return Status{
+			IsRunning: false,
+			PID:       -1,
+			Error:     err,
+		}
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(list)), "\n")
+	lines := strings.Split(strings.TrimSpace(output), "\n")
 	if thisRef.command.Name == "" {
-		return ServiceStatus{}, err
+		return Status{}
 	}
 
-	status := ServiceStatus{}
-
+	status := Status{
+		IsRunning: false,
+		PID:       -1,
+		Error:     nil,
+	}
 	for _, line := range lines {
-
-		// logger.Log("line: ", line)
-
 		chunks := strings.Split(line, "\t")
 
 		if chunks[2] == thisRef.command.Name {
 			if chunks[0] != "-" {
 				pid, err := strconv.Atoi(chunks[0])
-
 				if err != nil {
-					return status, err
+					return status
 				}
 				status.PID = pid
 			}
 
-			if status.PID != 0 {
+			if status.PID != -1 {
 				status.IsRunning = true
 			}
 		}
+
+		break
 	}
 
-	return status, nil
+	return status
 }
 
 // Exists -
@@ -329,4 +278,17 @@ func (thisRef MacOSService) FileContent() ([]byte, error) {
 	}
 
 	return plistTemplateBytes.Bytes(), nil
+}
+
+func runLaunchCtlCommand(args ...string) (out string, err error) {
+	// if !helpersUser.IsRoot() {
+	// 	args = append([]string{"--user"}, args...)
+	// }
+
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprint("EXEC: launchctl ", strings.Join(args, " ")),
+	})
+
+	return helpersExec.ExecWithArgs("launchctl", args...)
 }
