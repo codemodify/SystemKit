@@ -12,19 +12,22 @@ func Test_Events_01(t *testing.T) {
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)
-			helpersEvents.EventsWithDataOnce().Raise("PING", nil)
+			helpersEvents.EventsWithData().Raise("PING", nil)
 		}
 	}()
 
 	// 1 ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
 	wg1 := sync.WaitGroup{}
 
-	wg1.Add(1)
 	pongHandler1 := func(data []byte) {
 		wg1.Done()
 	}
-	helpersEvents.EventsWithDataOnce().On("PING", pongHandler1)
-	wg1.Wait()
+
+	wg1.Add(1)
+	helpersEvents.EventsWithData().On("PING", pongHandler1)
+
+	wg1.Add(1)
+	helpersEvents.EventsWithData().On("PING", pongHandler1)
 
 	// // 2 ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
 	// wg2 := sync.WaitGroup{}
