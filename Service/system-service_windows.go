@@ -20,6 +20,38 @@ import (
 
 var logTag = "SYSTEM-SERVICE"
 
+// ServiceErrorType -
+type ServiceErrorType int
+
+// ServiceErrorSuccess -
+const (
+	ServiceErrorSuccess      ServiceErrorType = iota
+	ServiceErrorDoesNotExist                  = iota
+	ServiceErrorOther                         = iota
+)
+
+func (thisRef ServiceErrorType) String() string {
+	switch thisRef {
+	case ServiceErrorSuccess:
+		return "Success"
+
+	case ServiceErrorDoesNotExist:
+		return "Service Does Not Exist"
+
+	case ServiceErrorOther:
+		return "Other error occured"
+
+	default:
+		return fmt.Sprintf("%d", int(thisRef))
+	}
+}
+
+// ServiceError -
+type ServiceError struct {
+	Type    ServiceErrorType
+	Details error
+}
+
 // WindowsService - Represents Windows service
 type WindowsService struct {
 	command ServiceCommand

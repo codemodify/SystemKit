@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	helpersErrors "github.com/codemodify/SystemKit/Helpers"
 	helpersExec "github.com/codemodify/SystemKit/Helpers"
 	helpersFiles "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
@@ -22,11 +23,11 @@ import (
 
 // LinuxService - Represents Linux SystemD service
 type LinuxService struct {
-	command ServiceCommand
+	command Command
 }
 
 // New -
-func New(command ServiceCommand) SystemService {
+func New(command Command) SystemService {
 	return &LinuxService{
 		command: command,
 	}
@@ -42,20 +43,19 @@ func (thisRef LinuxService) Install(start bool) error {
 	path := thisRef.FilePath()
 	dir := filepath.Dir(path)
 
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("making sure folder exists: ", dir),
 	})
-
 	os.MkdirAll(dir, os.ModePerm)
 
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("generating unit file"),
 	})
-
 	content, err := thisRef.FileContent()
-
 	if err != nil {
 		return err
 	}
@@ -64,9 +64,7 @@ func (thisRef LinuxService) Install(start bool) error {
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("writing unit to: ", path),
 	})
-
 	err = ioutil.WriteFile(path, content, 0644)
-
 	if err != nil {
 		return err
 	}
@@ -76,9 +74,10 @@ func (thisRef LinuxService) Install(start bool) error {
 		"message": fmt.Sprintf("wrote unit: %s", string(content)),
 	})
 
+	// 3.
 	if start {
-		err := thisRef.Start()
-		if err != nil {
+		err = thisRef.Start()
+		if err != nil && !helpersErrors.Is(err, ErrServiceDoesNotExist) {
 			return err
 		}
 	}
@@ -88,27 +87,41 @@ func (thisRef LinuxService) Install(start bool) error {
 
 // Start -
 func (thisRef LinuxService) Start() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": "loading unit file with systemd",
+		"message": "reloading daemon",
 	})
-
-	_, err := runSystemCtlCommand("start", thisRef.command.Name)
+	output, err := runSystemCtlCommand("daemon-reload")
 	if err != nil {
 		return err
 	}
 
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "enabling unit file with systemd",
 	})
-
-	_, err = runSystemCtlCommand("enable", thisRef.command.Name)
+	output, err = runSystemCtlCommand("enable", thisRef.command.Name)
 	if err != nil {
-		e := err.Error()
-		if strings.Contains(e, "Created symlink") {
-			return nil
+		if strings.Contains(output, "Failed to enable unit") && strings.Contains(output, "does not exist") {
+			return ErrServiceDoesNotExist
 		}
+
+		return err
+	}
+
+	// 3.
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": "loading unit file with systemd",
+	})
+	output, err = runSystemCtlCommand("start", thisRef.command.Name)
+	if err != nil {
+		if strings.Contains(output, "Failed to start") && strings.Contains(output, "not found") {
+			return ErrServiceDoesNotExist
+		}
+
 		return err
 	}
 
@@ -117,16 +130,17 @@ func (thisRef LinuxService) Start() error {
 
 // Restart -
 func (thisRef LinuxService) Restart() error {
-	_, err := runSystemCtlCommand("reload-or-restart", thisRef.command.Name)
+	err := thisRef.Stop()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return thisRef.Start()
 }
 
 // Stop -
 func (thisRef LinuxService) Stop() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
@@ -136,11 +150,11 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "stopping unit file with systemd",
 	})
-
 	output, err := runSystemCtlCommand("stop", thisRef.command.Name)
 	if err != nil {
 		if strings.Contains(output, "Failed to stop") && strings.Contains(output, "not loaded") {
@@ -150,6 +164,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
+	// 3.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "disabling unit file with systemd",
@@ -170,6 +185,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
+	// 4.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "reloading daemon",
@@ -179,6 +195,7 @@ func (thisRef LinuxService) Stop() error {
 		return err
 	}
 
+	// 5.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "running reset-failed",
@@ -193,50 +210,66 @@ func (thisRef LinuxService) Stop() error {
 
 // Uninstall -
 func (thisRef LinuxService) Uninstall() error {
+	// 1.
 	err := thisRef.Stop()
-	if err != nil {
+	if err != nil && !helpersErrors.Is(err, ErrServiceDoesNotExist) {
 		return err
 	}
 
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": "remove unit file",
 	})
 	err = os.Remove(thisRef.FilePath())
-	if err != nil {
-		return err
+	if e, ok := err.(*os.PathError); ok {
+		if os.IsNotExist(e.Err) {
+			return nil
+		}
 	}
 
-	return nil
+	return err
 }
 
 // Status -
-func (thisRef LinuxService) Status() (ServiceStatus, error) {
-	serviceStatus, _ := runSystemCtlCommand("is-active", thisRef.command.Name)
-
-	// Take 1
-	if strings.Contains(serviceStatus, "inactive") {
-		return ServiceStatus{}, nil
+func (thisRef LinuxService) Status() Status {
+	output, err := runSystemCtlCommand("status", thisRef.command.Name)
+	if err != nil {
+		return Status{
+			IsRunning: false,
+			PID:       -1,
+			Error:     err,
+		}
 	}
 
-	// Take 2
-	serviceStatus, _ = runSystemCtlCommand("status", thisRef.command.Name)
-	status := ServiceStatus{
-		IsRunning: true,
+	if strings.Contains(output, "could not be found") {
+		return Status{
+			IsRunning: false,
+			PID:       -1,
+			Error:     ErrServiceDoesNotExist,
+		}
 	}
 
-	// Get the PID from the status output
-	lines := strings.Split(serviceStatus, "\n")
-	for _, line := range lines {
+	status := Status{
+		IsRunning: false,
+		PID:       -1,
+		Error:     nil,
+	}
+
+	for _, line := range strings.Split(output, "\n") {
 		if strings.Contains(line, "Main PID") {
 			lineParts := strings.Split(strings.TrimSpace(line), " ")
 			if len(lineParts) >= 2 {
 				status.PID, _ = strconv.Atoi(lineParts[2])
 			}
+		} else if strings.Contains(line, "Active") {
+			if strings.Contains(line, "active (running)") {
+				status.IsRunning = true
+			}
 		}
 	}
 
-	return status, nil
+	return status
 }
 
 // Exists -
@@ -287,6 +320,10 @@ WantedBy=multi-user.target
 }
 
 func runSystemCtlCommand(args ...string) (out string, err error) {
+	if !helpersUser.IsRoot() {
+		args = append([]string{"--user"}, args...)
+	}
+
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprint("EXEC: systemctl ", strings.Join(args, " ")),
@@ -295,7 +332,7 @@ func runSystemCtlCommand(args ...string) (out string, err error) {
 	return helpersExec.ExecWithArgs("systemctl", args...)
 }
 
-func transformCommandForSaveToDisk(command ServiceCommand) ServiceCommand {
+func transformCommandForSaveToDisk(command Command) Command {
 	if len(command.Args) > 0 {
 		command.Executable = fmt.Sprintf("%s %s", command.Executable, strings.Join(command.Args, " "))
 	}
