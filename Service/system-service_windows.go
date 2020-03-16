@@ -212,7 +212,7 @@ func (thisRef *WindowsService) Start() error {
 		if !strings.Contains(err.Error(), "already running") {
 			logging.Instance().LogErrorWithFields(loggingC.Fields{
 				"method":  helpersReflect.GetThisFuncName(),
-				"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, aaaa),
+				"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, err),
 			})
 
 			return fmt.Errorf("error starting: %s, %v", thisRef.command.Name, err)
