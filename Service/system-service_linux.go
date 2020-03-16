@@ -21,6 +21,8 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
+var logTag = "SYSTEM-SERVICE"
+
 // LinuxService - Represents Linux SystemD service
 type LinuxService struct {
 	command Command
