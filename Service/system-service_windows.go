@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/sys/windows/svc"
-	"golang.org/x/sys/windows/svc/mgr"
+	svcMgr "golang.org/x/sys/windows/svc/mgr"
 
 	helpersExec "github.com/codemodify/SystemKit/Helpers"
 	helpersReflect "github.com/codemodify/SystemKit/Helpers"
@@ -20,25 +20,27 @@ import (
 
 var logTag = "SYSTEM-SERVICE"
 
-// ServiceErrorType -
-type ServiceErrorType int
+type serviceErrorType int
 
-// ServiceErrorSuccess -
 const (
-	ServiceErrorSuccess      ServiceErrorType = iota
-	ServiceErrorDoesNotExist                  = iota
-	ServiceErrorOther                         = iota
+	serviceErrorSuccess      serviceErrorType = iota
+	serviceErrorDoesNotExist                  = iota
+	serviceErrorCantConnect                   = iota
+	serviceErrorOther                         = iota
 )
 
-func (thisRef ServiceErrorType) String() string {
+func (thisRef serviceErrorType) String() string {
 	switch thisRef {
-	case ServiceErrorSuccess:
+	case serviceErrorSuccess:
 		return "Success"
 
-	case ServiceErrorDoesNotExist:
+	case serviceErrorDoesNotExist:
 		return "Service Does Not Exist"
 
-	case ServiceErrorOther:
+	case serviceErrorCantConnect:
+		return "Service Can't Connect"
+
+	case serviceErrorOther:
 		return "Other error occured"
 
 	default:
@@ -46,19 +48,18 @@ func (thisRef ServiceErrorType) String() string {
 	}
 }
 
-// ServiceError -
-type ServiceError struct {
-	Type    ServiceErrorType
-	Details error
+type serviceError struct {
+	Type  serviceErrorType
+	Error error
 }
 
 // WindowsService - Represents Windows service
 type WindowsService struct {
-	command ServiceCommand
+	command Command
 }
 
 // New -
-func New(command ServiceCommand) SystemService {
+func New(command Command) SystemService {
 	return &WindowsService{
 		command: command,
 	}
@@ -108,14 +109,14 @@ func (thisRef *WindowsService) Install(start bool) error {
 		"message": fmt.Sprintf("%s: attempting to install: %s", logTag, thisRef.command.Name),
 	})
 
-	// check if service exists
+	// 1. check if service exists
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: check if exists: %s", logTag, thisRef.command.Name),
 	})
 
-	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type == ServiceErrorDoesNotExist { // this is a good thing
+	winServiceManager, winService, sError := connectAndOpenService(thisRef.command.Name)
+	if sError.Type == serviceErrorSuccess { // service already exists
 		if winService != nil {
 			winService.Close()
 		}
@@ -123,11 +124,10 @@ func (thisRef *WindowsService) Install(start bool) error {
 			winServiceManager.Disconnect()
 		}
 
-		logging.Instance().LogDebugWithFields(loggingC.Fields{
-			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: does not exist: %s", logTag, thisRef.command.Name),
-		})
-	} else {
+		return nil
+	}
+
+	if sError.Type != serviceErrorDoesNotExist { // if any other error then return it
 		if winService != nil {
 			winService.Close()
 		}
@@ -137,42 +137,29 @@ func (thisRef *WindowsService) Install(start bool) error {
 
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: service '%s' already exists: ", logTag, thisRef.command.Name),
+			"message": fmt.Sprintf("%s: service '%s' encountered error %s", logTag, thisRef.command.Name, sError.Error.Error()),
 		})
 
-		return fmt.Errorf("service '%s' already exists: ", thisRef.command.Name)
+		return sError.Error
 	}
 
-	// connect again as the `winServiceManager, winService` are null from previous step
-	winServiceManager, winService, err = connectAndOpenService(thisRef.command.Name)
-	if err.Type != ServiceErrorDoesNotExist {
-		winServiceManager.Disconnect()
-
-		return err.Details
-	}
-	defer winServiceManager.Disconnect()
-
-	// Create the system service
+	// 2. create the system service
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: creating: '%s', binary: '%s', args: '%s'", logTag, thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
 	})
 
-	if winService != nil {
-		winService.Close()
-	}
-
-	winService, err1 := winServiceManager.CreateService(
+	winService, err := winServiceManager.CreateService(
 		thisRef.command.Name,
 		thisRef.command.Executable,
-		mgr.Config{
-			StartType:   mgr.StartAutomatic,
+		svcMgr.Config{
+			StartType:   svcMgr.StartAutomatic,
 			DisplayName: thisRef.command.Name,
 			Description: thisRef.command.Description,
 		},
 		thisRef.command.Args...,
 	)
-	if err1 != nil {
+	if err != nil {
 		if winService != nil {
 			winService.Close()
 		}
@@ -182,10 +169,10 @@ func (thisRef *WindowsService) Install(start bool) error {
 
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: error creating: %s, details: %v ", logTag, thisRef.command.Name, err1),
+			"message": fmt.Sprintf("%s: error creating: %s, details: %v ", logTag, thisRef.command.Name, err),
 		})
 
-		return err1
+		return err
 	}
 
 	winService.Close()
@@ -196,6 +183,7 @@ func (thisRef *WindowsService) Install(start bool) error {
 		"message": fmt.Sprintf("%s: created: '%s', binary: '%s', args: '%s'", logTag, thisRef.command.Name, thisRef.command.Executable, thisRef.command.Args),
 	})
 
+	// 3. start if needed
 	if start {
 		if err := thisRef.Start(); err != nil {
 			return err
@@ -207,26 +195,28 @@ func (thisRef *WindowsService) Install(start bool) error {
 
 // Start -
 func (thisRef *WindowsService) Start() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprintf("%s: attempting to start: ", logTag, thisRef.command.Name),
+		"message": fmt.Sprintf("%s: attempting to start: %s", logTag, thisRef.command.Name),
 	})
 
-	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type != ServiceErrorSuccess {
-		return err.Details
+	winServiceManager, winService, sError := connectAndOpenService(thisRef.command.Name)
+	if sError.Type != serviceErrorSuccess {
+		return sError.Error
 	}
 	defer winServiceManager.Disconnect()
 	defer winService.Close()
 
-	err1 := winService.Start() // thisRef.command.Args...
-	if err1 != nil {
+	// 2.
+	err := winService.Start()
+	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, err1),
+			"message": fmt.Sprintf("%s: error starting: %s, %v", logTag, thisRef.command.Name, err),
 		})
 
-		return fmt.Errorf("error starting: %s, %v", thisRef.command.Name, err1)
+		return fmt.Errorf("error starting: %s, %v", thisRef.command.Name, err)
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
@@ -243,15 +233,12 @@ func (thisRef *WindowsService) Restart() error {
 		return err
 	}
 
-	if err := thisRef.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	return thisRef.Start()
 }
 
 // Stop -
 func (thisRef *WindowsService) Stop() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: attempting to stop: %s", logTag, thisRef.command.Name),
@@ -271,11 +258,12 @@ func (thisRef *WindowsService) Stop() error {
 		})
 	}
 
+	// 2.
 	err := thisRef.control(svc.Stop, svc.Stopped)
 	if err != nil {
 		e := err.Error()
 		if strings.Contains(e, "service does not exist") {
-			return nil
+			return ErrServiceDoesNotExist
 		} else if strings.Contains(e, "service has not been started") {
 			return nil
 		}
@@ -288,6 +276,7 @@ func (thisRef *WindowsService) Stop() error {
 		return err
 	}
 
+	// 3.
 	attempt := 0
 	maxAttempts := 10
 	wait := 3 * time.Second
@@ -303,8 +292,8 @@ func (thisRef *WindowsService) Stop() error {
 		time.Sleep(wait)
 
 		// Attempt to start the service again
-		stat, err := thisRef.Status()
-		if err != nil {
+		stat := thisRef.Status()
+		if stat.Error != nil {
 			return err
 		}
 
@@ -328,26 +317,30 @@ func (thisRef *WindowsService) Stop() error {
 
 // Uninstall -
 func (thisRef *WindowsService) Uninstall() error {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: attempting to uninstall: %s", logTag, thisRef.command.Name),
 	})
 
-	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type != ServiceErrorSuccess {
-		return err.Details
+	winServiceManager, winService, sError := connectAndOpenService(thisRef.command.Name)
+	if sError.Type == serviceErrorDoesNotExist {
+		return nil
+	} else if sError.Type != serviceErrorSuccess {
+		return sError.Error
 	}
 	defer winServiceManager.Disconnect()
 	defer winService.Close()
 
-	err1 := winService.Delete()
-	if err1 != nil {
+	// 2.
+	err := winService.Delete()
+	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprintf("%s: failed to uninstall: %s, %v", logTag, thisRef.command.Name, err1),
+			"message": fmt.Sprintf("%s: failed to uninstall: %s, %v", logTag, thisRef.command.Name, err),
 		})
 
-		return err1
+		return err
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
@@ -359,27 +352,33 @@ func (thisRef *WindowsService) Uninstall() error {
 }
 
 // Status -
-func (thisRef *WindowsService) Status() (ServiceStatus, error) {
+func (thisRef *WindowsService) Status() Status {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: querying status: %s", logTag, thisRef.command.Name),
 	})
 
 	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type != ServiceErrorSuccess {
-		return ServiceStatus{}, err.Details
+	if err.Type != serviceErrorSuccess {
+		return Status{
+			Error: err.Error,
+		}
 	}
 	defer winServiceManager.Disconnect()
 	defer winService.Close()
 
+	// 2.
 	stat, err1 := winService.Query()
 	if err1 != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
-			"message": fmt.Sprint("%s: error getting service status: ", logTag, err1),
+			"message": fmt.Sprint("%s: error getting service status: %s", logTag, err1),
 		})
 
-		return ServiceStatus{}, fmt.Errorf("error getting service status: %v", err1)
+		return Status{
+			Error: fmt.Errorf("error getting service status: %v", err1),
+		}
 	}
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
@@ -387,10 +386,15 @@ func (thisRef *WindowsService) Status() (ServiceStatus, error) {
 		"message": fmt.Sprintf("%s: service status: %#v", logTag, stat),
 	})
 
-	return ServiceStatus{
+	status := Status{
 		PID:       int(stat.ProcessId),
 		IsRunning: stat.State == svc.Running,
-	}, nil
+	}
+	if !status.IsRunning {
+		status.PID = -1
+	}
+
+	return status
 }
 
 // Exists -
@@ -504,8 +508,8 @@ func (thisRef *WindowsService) control(command svc.Cmd, state svc.State) error {
 	})
 
 	winServiceManager, winService, err := connectAndOpenService(thisRef.command.Name)
-	if err.Type != ServiceErrorSuccess {
-		return err.Details
+	if err.Type != serviceErrorSuccess {
+		return err.Error
 	}
 	defer winServiceManager.Disconnect()
 	defer winService.Close()
@@ -549,23 +553,23 @@ func (thisRef *WindowsService) control(command svc.Cmd, state svc.State) error {
 	return nil
 }
 
-func connectAndOpenService(serviceName string) (*mgr.Mgr, *mgr.Service, ServiceError) {
-	// connect to Windows Service Manager
+func connectAndOpenService(serviceName string) (*svcMgr.Mgr, *svcMgr.Service, serviceError) {
+	// 1.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: connecting to Windows Service Manager", logTag),
 	})
 
-	winServiceManager, err := mgr.Connect()
+	winServiceManager, err := svcMgr.Connect()
 	if err != nil {
 		logging.Instance().LogErrorWithFields(loggingC.Fields{
 			"method":  helpersReflect.GetThisFuncName(),
 			"message": fmt.Sprintf("%s: error connecting to Windows Service Manager: %v", logTag, err),
 		})
-		return nil, nil, ServiceError{Type: ServiceErrorOther, Details: err}
+		return nil, nil, serviceError{Type: serviceErrorCantConnect, Error: err}
 	}
 
-	// open service to manage it
+	// 2.
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
 		"message": fmt.Sprintf("%s: opening service: %s", logTag, serviceName),
@@ -578,8 +582,8 @@ func connectAndOpenService(serviceName string) (*mgr.Mgr, *mgr.Service, ServiceE
 			"message": fmt.Sprintf("%s: error opening service: %s, %v", logTag, serviceName, err),
 		})
 
-		return winServiceManager, nil, ServiceError{Type: ServiceErrorDoesNotExist, Details: err}
+		return winServiceManager, nil, serviceError{Type: serviceErrorDoesNotExist, Error: err}
 	}
 
-	return winServiceManager, winService, ServiceError{Type: ServiceErrorSuccess}
+	return winServiceManager, winService, serviceError{Type: serviceErrorSuccess}
 }

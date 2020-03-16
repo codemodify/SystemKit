@@ -1,3 +1,5 @@
+// +build !windows
+
 package tests
 
 import (
@@ -13,8 +15,8 @@ func createService() Service.SystemService {
 		DisplayLabel:     "SystemKit Test Service",
 		Description:      "SystemKit Test Service",
 		DocumentationURL: "",
-		Executable:       "/usr/bin/watch",
-		Args:             []string{"ls"},
+		Executable:       "htop",
+		Args:             []string{""},
 		WorkingDirectory: "/tmp",
 		StdOutPath:       "null",
 		RunAsUser:        "user",
@@ -29,8 +31,8 @@ func createRandomService() Service.SystemService {
 		DisplayLabel:     fmt.Sprintf("SystemKit Test Service-%s", randomData),
 		Description:      fmt.Sprintf("SystemKit Test Service-%s", randomData),
 		DocumentationURL: "",
-		Executable:       "/usr/bin/watch",
-		Args:             []string{"ls"},
+		Executable:       "htop",
+		Args:             []string{""},
 		WorkingDirectory: "/tmp",
 		StdOutPath:       "null",
 		RunAsUser:        "user",
