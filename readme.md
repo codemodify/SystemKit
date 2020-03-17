@@ -58,7 +58,11 @@ See samples or readme for each folder
 			- `\Users\vagrant\Downloads\busybox64.exe sh` to have the `Ctrl + L`
 		-
 		- `curl -O https://dl.google.com/go/go1.13.7.windows-amd64.msi`
+		- `curl -Lk -o firefox.msi https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=en-US`
+		- `curl -Lk -o vscode-setup.exe https://aka.ms/win32-x64-user-stable`
 		- `msiexec /i go1.13.7.windows-amd64.msi /quiet /qn /norestart /log install.log`
+		- `msiexec /i firefox.msi /quiet /qn /norestart /log install.log`
+		- `vscode-setup.exe /VERYSILENT /MERGETASKS=!runcode`
 		- `shutdown -s -t 0`
 		-
 		- `vagrant up windows && vagrant ssh windows`
