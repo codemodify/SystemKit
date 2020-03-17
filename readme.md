@@ -63,6 +63,7 @@ See samples or readme for each folder
 		- `msiexec /i go1.13.7.windows-amd64.msi /quiet /qn /norestart /log install.log`
 		- `msiexec /i firefox.msi /quiet /qn /norestart /log install.log`
 		- `vscode-setup.exe /VERYSILENT /MERGETASKS=!runcode`
+		- `choco install git -params '"/GitOnlyOnPath"'`
 		- `shutdown -s -t 0`
 		-
 		- `vagrant up windows && vagrant ssh windows`
