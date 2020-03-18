@@ -8,7 +8,7 @@ import (
 )
 
 func Test_stop(t *testing.T) {
-	service := createService()
+	service := createRemoteitService()
 
 	err := service.Stop()
 	if helpersErrors.Is(err, Service.ErrServiceDoesNotExist) {

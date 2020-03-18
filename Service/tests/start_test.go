@@ -5,7 +5,7 @@ import (
 )
 
 func Test_start(t *testing.T) {
-	service := createService()
+	service := createRemoteitService()
 
 	err := service.Start()
 	if err != nil {

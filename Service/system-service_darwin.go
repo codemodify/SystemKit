@@ -218,9 +218,9 @@ func (thisRef MacOSService) Status() Status {
 			if status.PID != -1 {
 				status.IsRunning = true
 			}
-		}
 
-		break
+			break
+		}
 	}
 
 	return status

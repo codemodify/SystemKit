@@ -5,7 +5,7 @@ import (
 )
 
 func Test_restart(t *testing.T) {
-	service := createService()
+	service := createRemoteitService()
 
 	err := service.Restart()
 	if err != nil {

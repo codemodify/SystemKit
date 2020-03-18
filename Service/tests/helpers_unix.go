@@ -38,3 +38,17 @@ func createRandomService() Service.SystemService {
 		RunAsUser:        "user",
 	})
 }
+
+func createRemoteitService() Service.SystemService {
+	return Service.New(Service.Command{
+		Name:             "it.remote.cli",
+		DisplayLabel:     "it.remote.cli",
+		Description:      "it.remote.cli",
+		DocumentationURL: "",
+		Executable:       "/Users/nicolae/Downloads/remoteit_mac-osx_x86_64",
+		Args:             []string{"watch", "-v", "-c", "/etc/remoteit/config.json"},
+		WorkingDirectory: "",
+		StdOutPath:       "null",
+		RunAsUser:        "user",
+	})
+}
