@@ -167,6 +167,9 @@ func (thisRef MacOSService) Uninstall() error {
 		return err
 	}
 
+	// INFO: ignore the return value as is it is barely defined by the docs
+	// what the expected behavior would be. The previous stop and remove the "plist" file
+	// will uninstall the service.
 	runLaunchCtlCommand("remove", thisRef.command.Name)
 	return nil
 }
