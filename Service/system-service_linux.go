@@ -21,7 +21,7 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
-var logTag = "SYSTEM-SERVICE"
+var logTag = "SYSTEMD-SERVICE"
 
 // LinuxService - Represents Linux SystemD service
 type LinuxService struct {
@@ -30,6 +30,11 @@ type LinuxService struct {
 
 // New -
 func New(command Command) SystemService {
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: config object: %s ", logTag, helpersJSON.AsJSONString(command)),
+	})
+
 	return &LinuxService{
 		command: command,
 	}
@@ -329,10 +334,21 @@ func runSystemCtlCommand(args ...string) (out string, err error) {
 
 	logging.Instance().LogDebugWithFields(loggingC.Fields{
 		"method":  helpersReflect.GetThisFuncName(),
-		"message": fmt.Sprint("EXEC: systemctl ", strings.Join(args, " ")),
+		"message": fmt.Sprintf("%s: RUN-SYSTEMCTL: systemctl %s", logTag, strings.Join(args, " ")),
 	})
 
-	return helpersExec.ExecWithArgs("systemctl", args...)
+	output, err := helpersExec.ExecWithArgs("systemctl", args...)
+	errAsString := ""
+	if err != nil {
+		errAsString = err.Error()
+	}
+
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: RUN-SYSTEMCTL-OUT: output: %s, error: %s", logTag, output, errAsString),
+	})
+
+	return output, err
 }
 
 func transformCommandForSaveToDisk(command Command) Command {

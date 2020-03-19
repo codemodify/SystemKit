@@ -39,7 +39,7 @@ func createRandomService() Service.SystemService {
 	})
 }
 
-func createRemoteitService() Service.SystemService {
+func CreateRemoteitService() Service.SystemService {
 	return Service.New(Service.Command{
 		Name:             "it.remote.cli",
 		DisplayLabel:     "it.remote.cli",

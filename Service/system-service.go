@@ -34,7 +34,7 @@ type Command struct {
 	StartDelayInSeconds int
 	RunAsUser           string
 	RunAsGroup          string
-	OnStopDelegate      func()
+	OnStopDelegate      func() `json:"-"`
 }
 
 // Status - is a generic representation of the service running on the system

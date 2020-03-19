@@ -18,7 +18,7 @@ import (
 	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 )
 
-var logTag = "SYSTEM-SERVICE"
+var logTag = "WINDOWS-SERVICE"
 
 type serviceErrorType int
 
@@ -60,6 +60,11 @@ type WindowsService struct {
 
 // New -
 func New(command Command) SystemService {
+	logging.Instance().LogDebugWithFields(loggingC.Fields{
+		"method":  helpersReflect.GetThisFuncName(),
+		"message": fmt.Sprintf("%s: config object: %s ", logTag, helpersJSON.AsJSONString(command)),
+	})
+
 	return &WindowsService{
 		command: command,
 	}
