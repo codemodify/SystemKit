@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
 
@@ -23,25 +24,18 @@ type windowsEventlogLogger struct {
 // NewWindowsEventlogLogger -
 func NewWindowsEventlogLogger(logUntil loggingC.LogType) loggingC.Logger {
 	binaryName := filepath.Base(os.Args[0])
-
 	emergencyLogger := debug.New(binaryName)
-	eventlogLogger, err := eventlog.Open(binaryName)
-	if err != nil {
-		emergencyLogger.Error(1, err.Error())
 
-		return &windowsEventlogLogger{
-			logUntil:        logUntil,
-			eventlogLogger:  nil,
-			emergencyLogger: emergencyLogger,
-		}
-	}
-
-	// _ = eventlog.Remove(binaryName)
-	err = eventlog.InstallAsEventCreate(binaryName, eventlog.Error|eventlog.Warning|eventlog.Info)
+	// _ = eventlog.Remove(binaryName) eventlog.Error | eventlog.Warning | eventlog.Info
+	err := eventlog.InstallAsEventCreate(binaryName, eventlog.Error|eventlog.Warning|eventlog.Info)
 	if err != nil {
+
 		if strings.Contains(err.Error(), "registry key already exists") {
 			// SAFE to ignore
 			// emergencyLogger.Error(1, fmt.Sprint("warning creating service logs: ", err))
+		} else if err == windows.ERROR_ACCESS_DENIED {
+			// SAFE to ignore
+			// most probably running as user
 		} else {
 			emergencyLogger.Error(1, fmt.Sprint("error creating service logs: ", err))
 
@@ -50,6 +44,17 @@ func NewWindowsEventlogLogger(logUntil loggingC.LogType) loggingC.Logger {
 				eventlogLogger:  nil,
 				emergencyLogger: emergencyLogger,
 			}
+		}
+	}
+
+	eventlogLogger, err := eventlog.Open(binaryName)
+	if err != nil {
+		emergencyLogger.Error(1, err.Error())
+
+		return &windowsEventlogLogger{
+			logUntil:        logUntil,
+			eventlogLogger:  nil,
+			emergencyLogger: emergencyLogger,
 		}
 	}
 
