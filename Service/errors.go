@@ -4,4 +4,5 @@ import (
 	"errors"
 )
 
+// ErrServiceDoesNotExist -
 var ErrServiceDoesNotExist = errors.New("ErrServiceDoesNotExist")

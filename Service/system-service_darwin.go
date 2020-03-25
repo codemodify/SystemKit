@@ -12,14 +12,14 @@ import (
 	"strings"
 	"text/template"
 
-	helpersErrors "github.com/codemodify/SystemKit/Helpers"
-	helpersExec "github.com/codemodify/SystemKit/Helpers"
-	helpersFiles "github.com/codemodify/SystemKit/Helpers"
-	helpersJSON "github.com/codemodify/SystemKit/Helpers"
-	helpersReflect "github.com/codemodify/SystemKit/Helpers"
-	helpersUser "github.com/codemodify/SystemKit/Helpers"
-	logging "github.com/codemodify/SystemKit/Logging"
-	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
+	helpersErrors "github.com/codemodify/systemkit-helpers"
+	helpersExec "github.com/codemodify/systemkit-helpers"
+	helpersFiles "github.com/codemodify/systemkit-helpers"
+	helpersJSON "github.com/codemodify/systemkit-helpers"
+	helpersReflect "github.com/codemodify/systemkit-helpers"
+	helpersUser "github.com/codemodify/systemkit-helpers"
+	logging "github.com/codemodify/systemkit-logging"
+	loggingC "github.com/codemodify/systemkit-logging/contracts"
 )
 
 var logTag = "MACOS-SYSTEM-SERVICE"

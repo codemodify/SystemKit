@@ -3,12 +3,12 @@ package tests
 import (
 	"testing"
 
-	helpersErrors "github.com/codemodify/SystemKit/Helpers"
 	"github.com/codemodify/SystemKit/Service"
+	helpersErrors "github.com/codemodify/systemkit-helpers"
 )
 
 func Test_stop(t *testing.T) {
-	service := createRemoteitService()
+	service := CreateRemoteitService()
 
 	err := service.Stop()
 	if helpersErrors.Is(err, Service.ErrServiceDoesNotExist) {

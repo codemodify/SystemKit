@@ -5,8 +5,8 @@ package tests
 import (
 	"fmt"
 
-	helpersGuid "github.com/codemodify/SystemKit/Helpers"
 	"github.com/codemodify/SystemKit/Service"
+	helpersGuid "github.com/codemodify/systemkit-helpers"
 )
 
 func createService() Service.SystemService {

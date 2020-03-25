@@ -12,11 +12,11 @@ import (
 	"golang.org/x/sys/windows/svc"
 	svcMgr "golang.org/x/sys/windows/svc/mgr"
 
-	helpersExec "github.com/codemodify/SystemKit/Helpers"
-	helpersJSON "github.com/codemodify/SystemKit/Helpers"
-	helpersReflect "github.com/codemodify/SystemKit/Helpers"
-	logging "github.com/codemodify/SystemKit/Logging"
-	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
+	helpersExec "github.com/codemodify/systemkit-helpers"
+	helpersJSON "github.com/codemodify/systemkit-helpers"
+	helpersReflect "github.com/codemodify/systemkit-helpers"
+	logging "github.com/codemodify/systemkit-logging"
+	loggingC "github.com/codemodify/systemkit-logging/contracts"
 )
 
 var logTag = "WINDOWS-SERVICE"

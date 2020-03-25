@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	helpersJSON "github.com/codemodify/SystemKit/Helpers"
-	helpersReflect "github.com/codemodify/SystemKit/Helpers"
-	helpersStrings "github.com/codemodify/SystemKit/Helpers"
-	logging "github.com/codemodify/SystemKit/Logging"
-	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
 	processList "github.com/codemodify/SystemKit/Processes/List"
+	helpersJSON "github.com/codemodify/systemkit-helpers"
+	helpersReflect "github.com/codemodify/systemkit-helpers"
+	helpersStrings "github.com/codemodify/systemkit-helpers"
+	logging "github.com/codemodify/systemkit-logging"
+	loggingC "github.com/codemodify/systemkit-logging/contracts"
 )
 
 const procMonLogID = "PROC-MON"

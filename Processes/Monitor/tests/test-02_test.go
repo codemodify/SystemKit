@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	logging "github.com/codemodify/SystemKit/Logging"
-	loggingC "github.com/codemodify/SystemKit/Logging/Contracts"
-	loggingP "github.com/codemodify/SystemKit/Logging/Persisters"
+	logging "github.com/codemodify/systemkit-logging"
+	loggingC "github.com/codemodify/systemkit-logging/contracts"
+	loggingP "github.com/codemodify/systemkit-logging/persisters"
 
 	procMon "github.com/codemodify/SystemKit/Processes/Monitor"
 )

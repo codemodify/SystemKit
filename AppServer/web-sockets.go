@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
-	"github.com/codemodify/SystemKit/Helpers/channels"
+	"github.com/codemodify/systemkit-helpers/channels"
 )
 
 // WebScoketsRequestHandler -

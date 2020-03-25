@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	// helpersErrors "github.com/codemodify/SystemKit/Helpers"
+	// helpersErrors "github.com/codemodify/systemkit-helpers"
 	// "github.com/codemodify/SystemKit/Service"
 	"github.com/codemodify/SystemKit/Service/tests"
 )

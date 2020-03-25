@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	logging "github.com/codemodify/SystemKit/Logging"
+	logging "github.com/codemodify/systemkit-logging"
 
 	jm "github.com/codemodify/SystemKit/AppServer"
 )
