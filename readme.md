@@ -12,7 +12,7 @@
 Dox				| Engineering docs on advanced topics							| [github.com/codemodify/DevDox](https://github.com/codemodify/DevDox)
 Logging 		| Complete, robust, flexible, advanced logging framework		| [github.com/codemodify/systemkit-logging](https://github.com/codemodify/systemkit-logging)
 Config 			| Complete, robust, flexible, advanced config framework			| [github.com/codemodify/systemkit-config](https://github.com/codemodify/systemkit-config)
-Events			| Event system for Go (message-bus, one-2-many, one-2-one)		| [github.com/codemodify/systemkit-events](https://github.com/codemodify/systemkit-events)
+Events			| Robust event system (message-bus, one-2-many, one-2-one)		| [github.com/codemodify/systemkit-events](https://github.com/codemodify/systemkit-events)
 Helpers			| Swiss-Army-Knife helpers										| [github.com/codemodify/systemkit-helpers](https://github.com/codemodify/systemkit-helpers)
 Cryptography 	| Advanced cryptography, drop-in replacement for gocrypt		| [github.com/codemodify/systemkit-cryptography](https://github.com/codemodify/systemkit-cryptography)
 AppServer 		| Build API Services / Middleware / Web Apps Frameworks			| [github.com/codemodify/systemkit-appserver](https://github.com/codemodify/systemkit-appserver)
