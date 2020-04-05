@@ -1,7 +1,8 @@
-# ![](https://fonts.gstatic.com/s/i/materialicons/bookmarks/v4/24px.svg) SystemKit
+# ![](https://fonts.gstatic.com/s/i/materialiconsoutlined/flare/v4/24px.svg) System Kit for Go
 
-### This repository was split into separate projects in order to focus on better contributions and QA
-### Further development will continue in the repositories below
+- A set of basic building blocks carefully designed to work well together
+- They are split into small chunks with efficiency in mind to provide custom inclusion into a project
+	- avoid including code that is never used but compiled into the binary
 
 &nbsp;					| Functionality 												| Code Base
 ---:					| ---															| ---
