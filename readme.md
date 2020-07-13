@@ -2,28 +2,74 @@
 
 - A set of basic building blocks carefully designed to work well together
 - They are split into small chunks with efficiency in mind to provide custom inclusion into a project
-	- avoid including code that is never used but compiled into the binary
+	- avoids including code that is never used but compiled into the binary
 
-&nbsp;							| Functionality 												| Code Base
----:							| ---															| ---
-__Dox__							| Engineering docs on advanced topics							| [github.com/codemodify/DevDox](https://github.com/codemodify/DevDox)
-__Logging__						| Complete, robust, flexible, advanced logging framework		| [github.com/codemodify/systemkit-logging](https://github.com/codemodify/systemkit-logging)
-__Config__						| Complete, robust, flexible, advanced config framework			| [github.com/codemodify/systemkit-config](https://github.com/codemodify/systemkit-config)
-__Events__						| Robust event system (message-bus, one-2-many, one-2-one)		| [github.com/codemodify/systemkit-events](https://github.com/codemodify/systemkit-events)
-__Commands + Flags__			| Robust, lean commands and flags for your CLI app				| [github.com/codemodify/systemkit-clicmdflags](https://github.com/codemodify/systemkit-clicmdflags)
-__Helpers__						| Swiss-Army-Knife helpers										| [github.com/codemodify/systemkit-helpers](https://github.com/codemodify/systemkit-helpers)
-__Terminal__ 					| Robust terminal manipulation									| [github.com/codemodify/systemkit-terminal](https://github.com/codemodify/systemkit-terminal)
-__Terminal Colors__				| Robust colors for terminal									| [github.com/codemodify/systemkit-terminal-colors](https://github.com/codemodify/systemkit-terminal-colors)
-__Terminal Spinner Progress__	| One line spinner progress 									| [github.com/codemodify/systemkit-terminal-progress-spinner](https://github.com/codemodify/systemkit-terminal-progress-spinner)
-__Terminal Static Progress__	| One line static progress 										| [github.com/codemodify/systemkit-terminal-progress-static](https://github.com/codemodify/systemkit-terminal-progress-static)
-__Cryptography__				| Advanced cryptography, drop-in replacement for gocrypt		| [github.com/codemodify/systemkit-cryptography](https://github.com/codemodify/systemkit-cryptography)
-__AppServer__					| Build API Services / Middleware / Web Apps Frameworks			| [github.com/codemodify/systemkit-appserver](https://github.com/codemodify/systemkit-appserver)
-__Processes__					| System process list/find, spawn and monitor					| [github.com/codemodify/systemkit-processes](https://github.com/codemodify/systemkit-processes)
-__Service__						| Create/Start/Stop/Delete system or user services				| [github.com/codemodify/systemkit-service](https://github.com/codemodify/systemkit-service)
-__Task Runner__ 				| Runs a group of tasks sequentially or in parallel				| [github.com/codemodify/systemkit-taskrunner](https://github.com/codemodify/systemkit-taskrunner)
-__DSA__							| The missing Go lang extended structures & algorithms			| [github.com/codemodify/systemkit-dsa](https://github.com/codemodify/systemkit-dsa)
-__MachineID__ 					| Detailed CPU Detection at Runtime								| [github.com/codemodify/systemkit-platform-machineid](https://github.com/codemodify/systemkit-platform-machineid)
-__OS__							| Detailed OS Detection at Runtime								| [github.com/codemodify/systemkit-platform-os](https://github.com/codemodify/systemkit-platform-os)
-__CPU__							| Detailed CPU Detection at Runtime								| [github.com/codemodify/systemkit-platform-cpu](https://github.com/codemodify/systemkit-platform-cpu)
-__SMBIOS__ 						| Access SMBIOS/DMI information exposed by hardware				| [github.com/codemodify/systemkit-platform-smbios](https://github.com/codemodify/systemkit-platform-smbios)
-__ETL__							| A set of convertors from one format to another				| [github.com/codemodify/systemkit-etl](https://github.com/codemodify/systemkit-etl)
+&nbsp;										| Functionality 																| Code Base
+---:										| ---																			| ---
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Docs__									| Engineering docs on advanced topics											| [github.com/codemodify/DevDox](https://github.com/codemodify/DevDox)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Logging__									| Complete, robust, flexible, advanced logging framework						| [github.com/codemodify/systemkit-logging](https://github.com/codemodify/systemkit-logging)
+__Logging Advanced__						| Advanced - allows tagged, grouped and sorted concurrent logging				| [github.com/codemodify/systemkit-logging-advanced](https://github.com/codemodify/systemkit-logging-advanced)
+__Logging Extenders With Fields__			| Extenders - With Fields - adds support for `logrus` type of syntax			| [github.com/codemodify/systemkit-logging-extenders-withfields](https://github.com/codemodify/systemkit-logging-extenders-withfields)
+__Logging Formatters Time RFC3339Nano__		| Formatters - Time RFC3339Nano - formats time using RFC3339Nano	 			| [github.com/codemodify/systemkit-logging-formatters-timerfc3339nano](https://github.com/codemodify/systemkit-logging-formatters-timerfc3339nano)
+__Logging Mixers Async__					| Mixers - Async - asynchronous logging	 										| [github.com/codemodify/systemkit-logging-mixers-async](https://github.com/codemodify/systemkit-logging-mixers-async)
+__Logging Mixers Buffered__					| Mixers - Buffered - buffered logging	 										| [github.com/codemodify/systemkit-logging-mixers-buffered](https://github.com/codemodify/systemkit-logging-mixers-buffered)
+__Logging Mixers Multi__					| Mixers - Multi - buffered logging	 											| [github.com/codemodify/systemkit-logging-mixers-multi](https://github.com/codemodify/systemkit-logging-mixers-multi)
+__Logging Persisters Console__				| Mixers - Persisters - Console - logs to console/terminal	 					| [github.com/codemodify/systemkit-logging-persisters-console](https://github.com/codemodify/systemkit-logging-persisters-console)
+__Logging Persisters File__					| Mixers - Persisters - File - logs to file										| [github.com/codemodify/systemkit-logging-persisters-file](https://github.com/codemodify/systemkit-logging-persisters-file)
+__Logging Persisters Windows Event Log__	| Mixers - Persisters - Windows Event Log - logs to windows event log			| [github.com/codemodify/systemkit-logging-persisters-windowseventlog](https://github.com/codemodify/systemkit-logging-persisters-windowseventlog)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Config__									| Complete, robust, flexible, advanced config framework							| [github.com/codemodify/systemkit-config](https://github.com/codemodify/systemkit-config)
+__Events__									| Robust event system (message-bus, one-2-many, one-2-one)						| [github.com/codemodify/systemkit-events](https://github.com/codemodify/systemkit-events)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Terminal__ 								| Robust terminal manipulation													| [github.com/codemodify/systemkit-terminal](https://github.com/codemodify/systemkit-terminal)
+__Terminal Read Password__					| Terminal read passowrd 														| [github.com/codemodify/systemkit-terminal-readpassword](https://github.com/codemodify/systemkit-terminal-readpassword)
+__Terminal Colors__							| Robust colors for terminal													| [github.com/codemodify/systemkit-terminal-colors](https://github.com/codemodify/systemkit-terminal-colors)
+__Terminal Progress__						| Terminal progress contract 													| [github.com/codemodify/systemkit-terminal-progress](https://github.com/codemodify/systemkit-terminal-progress)
+__Terminal Progress Spinner__				| Terminal one line spinner progress 											| [github.com/codemodify/systemkit-terminal-progress-spinner](https://github.com/codemodify/systemkit-terminal-progress-spinner)
+__Terminal Progress Static__				| Terminal one line static progress 											| [github.com/codemodify/systemkit-terminal-progress-static](https://github.com/codemodify/systemkit-terminal-progress-static)
+__Terminal Progress Static Tree__			| Terminal static tree progress 												| [github.com/codemodify/systemkit-terminal-progress-statictree](https://github.com/codemodify/systemkit-terminal-progress-statictree)
+__CLI Commands and Flags__					| Robust, lean commands and flags for your CLI app using native Go struct		| [github.com/codemodify/systemkit-clicmdflags](https://github.com/codemodify/systemkit-clicmdflags)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__AppServer__								| Build Micro Services / API Services / Middleware / Web Apps Frameworks		| [github.com/codemodify/systemkit-appserver](https://github.com/codemodify/systemkit-appserver)
+__AppServer HTTP__							| HTTP Endpoints for AppServer													| [github.com/codemodify/systemkit-appserver-http](https://github.com/codemodify/systemkit-appserver-http)
+__AppServer JSON__							| JSON Endpoints for AppServer													| [github.com/codemodify/systemkit-appserver-json](https://github.com/codemodify/systemkit-appserver-json)
+__AppServer SSH__							| SSH Endpoints for AppServer													| [github.com/codemodify/systemkit-appserver-ssh](https://github.com/codemodify/systemkit-appserver-ssh)
+__AppServer Mixed__							| WebSockets Endpoints for AppServer											| [github.com/codemodify/systemkit-appserver-websockets](https://github.com/codemodify/systemkit-appserver-websockets)
+__AppServer Mixed__							| Mixed Endpoints for AppServer, can host any mix of the above					| [github.com/codemodify/systemkit-appserver-mixed](https://github.com/codemodify/systemkit-appserver-mixed)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Call Stack__								| Easy, printable, pin-point call stack											| [github.com/codemodify/systemkit-callstack](https://github.com/codemodify/systemkit-callstack)
+__Crash Proof__								| Bullet proof, reportable, non crashable App and deeply nested Go routines		| [github.com/codemodify/systemkit-crashproof](https://github.com/codemodify/systemkit-crashproof)
+__Debug Sync__								| Mechanics to detect DEAD-LOCKS when using `sync` primitives like Mutex		| [github.com/codemodify/systemkit-debug-sync](https://github.com/codemodify/systemkit-debug-sync)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__GoCrypto__								| Fork of Go `crypto` with focus on Quantum Cryptographic Security				| [github.com/codemodify/systemkit-cryptography-gocrypto](https://github.com/codemodify/systemkit-cryptography-gocrypto)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Data Structures and Algorithms__			| Package that has specialized Data Structures									| [github.com/codemodify/systemkit-dsa](https://github.com/codemodify/systemkit-dsa)
+__ETL Framework__							| Extract Transform Load Framework to convert between data formats				| [github.com/codemodify/systemkit-etl](https://github.com/codemodify/systemkit-etl)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Processes__								| System process list/find, spawn and monitor									| [github.com/codemodify/systemkit-processes](https://github.com/codemodify/systemkit-processes)
+__Task Runner__ 							| Runs a group of tasks sequentially or in parallel								| [github.com/codemodify/systemkit-taskrunner](https://github.com/codemodify/systemkit-taskrunner)
+__Service__									| Create/Start/Stop/Delete system or user services in Go						| [github.com/codemodify/systemkit-service](https://github.com/codemodify/systemkit-service)
+__Service LaunchD__							| Service SPEC implementation for macOS											| [github.com/codemodify/systemkit-service-encoders-launchd](https://github.com/codemodify/systemkit-service-encoders-launchd)
+__Service RC_D__							| Service SPEC implementation for FreeBSD										| [github.com/codemodify/systemkit-service-encoders-rc_d](https://github.com/codemodify/systemkit-service-encoders-rc_d)
+__Service SystemD__							| Service SPEC implementation for Linux											| [github.com/codemodify/systemkit-service-encoders-systemd](https://github.com/codemodify/systemkit-service-encoders-systemd)
+__Service SystemV__							| Service SPEC implementation for older Linux									| [github.com/codemodify/systemkit-service-encoders-systemv](https://github.com/codemodify/systemkit-service-encoders-systemv)
+__Service UpStart__							| Service SPEC implementation for older Ubuntu									| [github.com/codemodify/systemkit-service-encoders-upstart](https://github.com/codemodify/systemkit-service-encoders-upstart)
+__Service SPEC__							| Service SPEC 																	| [github.com/codemodify/systemkit-service-encoders-spec](https://github.com/codemodify/systemkit-service-encoders-spec)
+__Service CLI__								| Create/Start/Stop/Delete system or user services in terminal					| [github.com/codemodify/systemkit-service-cli](https://github.com/codemodify/systemkit-service-cli)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__CPU__										| Detailed CPU Detection at Runtime												| [github.com/codemodify/systemkit-platform-cpu](https://github.com/codemodify/systemkit-platform-cpu)
+__MachineID__ 								| Detect Machine ID at Runtime													| [github.com/codemodify/systemkit-platform-machineid](https://github.com/codemodify/systemkit-platform-machineid)
+__OS__										| Detailed OS Detection at Runtime												| [github.com/codemodify/systemkit-platform-os](https://github.com/codemodify/systemkit-platform-os)
+__SMBIOS__ 									| Access SMBIOS/DMI information exposed by hardware								| [github.com/codemodify/systemkit-platform-smbios](https://github.com/codemodify/systemkit-platform-smbios)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Helpers Archive__							| Swiss-Army-Knife Helpers Archive												| [github.com/codemodify/systemkit-helpers-archive](https://github.com/codemodify/systemkit-helpers-archive)
+__Helpers Channels__						| Swiss-Army-Knife Helpers Channels												| [github.com/codemodify/systemkit-helpers-channels](https://github.com/codemodify/systemkit-helpers-channels)
+__Helpers Conv__							| Swiss-Army-Knife Helpers Conv - converts between standard types				| [github.com/codemodify/systemkit-helpers-conv](https://github.com/codemodify/systemkit-helpers-conv)
+__Helpers Files__							| Swiss-Army-Knife Helpers Files												| [github.com/codemodify/systemkit-helpers-files](https://github.com/codemodify/systemkit-helpers-files)
+__Helpers GUID__							| Swiss-Army-Knife Helpers GUID													| [github.com/codemodify/systemkit-helpers-guid](https://github.com/codemodify/systemkit-helpers-guid)
+__Helpers Networking__						| Swiss-Army-Knife Helpers Networking - create TCP Proxy, HTTP Reverse Proxy	| [github.com/codemodify/systemkit-helpers-networking](https://github.com/codemodify/systemkit-helpers-networking)
+__Helpers OS__								| Swiss-Army-Knife Helpers Operating System - like exec and user				| [github.com/codemodify/systemkit-helpers-os](https://github.com/codemodify/systemkit-helpers-os)
+__Helpers Reflection__						| Swiss-Army-Knife Helpers Reflection											| [github.com/codemodify/systemkit-helpers-reflection](https://github.com/codemodify/systemkit-helpers-reflection)
+__Helpers Remote__							| Swiss-Army-Knife Helpers Remote - exec remotely scripts on target machines	| [github.com/codemodify/systemkit-helpers-remote](https://github.com/codemodify/systemkit-helpers-remote)
