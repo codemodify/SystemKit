@@ -38,6 +38,7 @@ __AppServer JSON__							| JSON Endpoints for AppServer													| [github.co
 __AppServer SSH__							| SSH Endpoints for AppServer													| [github.com/codemodify/systemkit-appserver-ssh](https://github.com/codemodify/systemkit-appserver-ssh)
 __AppServer Mixed__							| WebSockets Endpoints for AppServer											| [github.com/codemodify/systemkit-appserver-websockets](https://github.com/codemodify/systemkit-appserver-websockets)
 __AppServer Mixed__							| Mixed Endpoints for AppServer, can host any mix of the above					| [github.com/codemodify/systemkit-appserver-mixed](https://github.com/codemodify/systemkit-appserver-mixed)
+__AppServer Tests and Samples__				| Tests and samples for  AppServer												| [github.com/codemodify/systemkit-appserver-tests](https://github.com/codemodify/systemkit-appserver-tests)
 &nbsp;										| &nbsp; 																		| &nbsp;
 __Call Stack__								| Easy, printable, pin-point call stack											| [github.com/codemodify/systemkit-callstack](https://github.com/codemodify/systemkit-callstack)
 __Crash Proof__								| Bullet proof, reportable, non crashable App and deeply nested Go routines		| [github.com/codemodify/systemkit-crashproof](https://github.com/codemodify/systemkit-crashproof)
