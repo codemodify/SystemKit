@@ -1,13 +1,17 @@
 # ![](https://fonts.gstatic.com/s/i/materialiconsoutlined/flare/v4/24px.svg) System Kit for Go
 
-- A set of basic building blocks carefully designed to work well together
-- They are split into small chunks with efficiency in mind to provide custom inclusion into a project
-	- avoids including code that is never used but compiled into the binary
+* A set of basic building blocks carefully designed to work well together with minimalism and simplicity in mind
+* They are split into small chunks for efficiency and provide opt-in model for a project
+* Another big problem is solves is avoiding including third party libraries that never gets used but compiled into the binary
+	* if you've had it with `npm install` type of problem downloading half of the internet of dependencies then this is for you as well
+* Based on interfaces you can provide your own implementation if you are not happy with the default one
 
 &nbsp;										| Functionality 																| Code Base
 ---:										| ---																			| ---
 &nbsp;										| &nbsp; 																		| &nbsp;
 __Docs__									| Engineering docs on advanced topics											| [github.com/codemodify/DevDox](https://github.com/codemodify/DevDox)
+&nbsp;										| &nbsp; 																		| &nbsp;
+__Error__									| Extended and detailed error model 											| [github.com/codemodify/systemkit-errors-errors](https://github.com/codemodify/systemkit-errors)
 &nbsp;										| &nbsp; 																		| &nbsp;
 __Logging__									| Complete, robust, flexible, advanced logging framework						| [github.com/codemodify/systemkit-logging](https://github.com/codemodify/systemkit-logging)
 __Logging Advanced__						| Advanced - allows tagged, grouped and sorted concurrent logging				| [github.com/codemodify/systemkit-logging-advanced](https://github.com/codemodify/systemkit-logging-advanced)
@@ -72,5 +76,227 @@ __Helpers Files__							| Swiss-Army-Knife Helpers Files												| [github.co
 __Helpers GUID__							| Swiss-Army-Knife Helpers GUID													| [github.com/codemodify/systemkit-helpers-guid](https://github.com/codemodify/systemkit-helpers-guid)
 __Helpers Networking__						| Swiss-Army-Knife Helpers Networking - create TCP Proxy, HTTP Reverse Proxy	| [github.com/codemodify/systemkit-helpers-networking](https://github.com/codemodify/systemkit-helpers-networking)
 __Helpers OS__								| Swiss-Army-Knife Helpers Operating System - like exec and user				| [github.com/codemodify/systemkit-helpers-os](https://github.com/codemodify/systemkit-helpers-os)
-__Helpers Reflection__						| Swiss-Army-Knife Helpers Reflection											| [github.com/codemodify/systemkit-helpers-reflection](https://github.com/codemodify/systemkit-helpers-reflection)
 __Helpers Remote__							| Swiss-Army-Knife Helpers Remote - exec remotely scripts on target machines	| [github.com/codemodify/systemkit-helpers-remote](https://github.com/codemodify/systemkit-helpers-remote)
+
+
+# ![](https://fonts.gstatic.com/s/i/materialicons/account_tree/v6/24px.svg) Hierarchy Tree
+```text
+	 ---------
+	| Errors  |
+	 ---------
+
+
+
+	 ---------
+	| Logging |
+	 ---------
+		|		 ----------------------------------------
+		|---->	| Logging Advanced                       |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Extenders Withfields           |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Formatters Time RFC 3339nano   |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Mixers Async                   |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Mixers Buffered                |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Mixers Multi                   |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Persisters Console             |
+		|		 ----------------------------------------
+		|
+		|
+		|		 -----------------
+		|		| Terminal Colors |
+		|		 -----------------
+		|		 ----------------------------------------
+		|---->	| Logging Persisters Console With Colors |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Persisters File                |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Persisters Rolling File        |
+		|		 ----------------------------------------
+		|		 ----------------------------------------
+		|---->	| Logging Persisters Windows Eventlog    |
+				 ----------------------------------------
+
+
+
+	 ----------
+	| Terminal |
+	 ----------
+		|		 -----------------
+		|---->	| Terminal Colors |
+				 -----------------
+
+
+
+	 -------------------
+	| Terminal Progress |
+	 -------------------
+		|		 -------------------------------
+		|---->	| Terminal Progress Spinner     |
+		|		 -------------------------------
+		|		 -------------------------------
+		|---->	| Terminal Progress Static      |
+		|		 -------------------------------
+		|		 -------------------------------
+		|---->	| Terminal Progress Static Tree |
+				 -------------------------------
+
+
+
+	 ------------------------
+	| Terminal Read Password |
+	 ------------------------
+
+
+
+	 ------------------------
+	| Helpers Archive       |
+	 ------------------------
+	 ------------------------
+	| Helpers Channels       |
+	 ------------------------
+	 ------------------------
+	| Helpers Conv           |
+	 ------------------------
+	 ------------------------
+	| Helpers Files          |
+	 ------------------------
+	 ------------------------
+	| Helpers GUID           |
+	 ------------------------
+	 ------------------------
+	| Helpers Networking     |
+	 ------------------------
+	 ------------------------
+	| Helpers OS             |
+	 ------------------------
+	 ------------------------
+	| Helpers Remote         |
+	 ------------------------
+	 ------------------------
+	| Helpers Remote         |
+	 ------------------------
+
+
+
+	 ------------
+	| App Server |
+	 ------------
+		|		 -----------------------
+		|---->	| App Server HTTP       |
+		|		 -----------------------
+		|		 -----------------------
+		|---->	| App Server JSON       |
+		|		 -----------------------
+		|		 -----------------------
+		|---->	| App Server Mixed      |
+		|		 -----------------------
+		|		 -----------------------
+		|---->	| App Server SSH        | - FIXME
+		|		 -----------------------
+		|		 -----------------------
+		|---->	| App Server WebSockets |
+				 -----------------------
+
+
+
+	 ------------
+	| Call Stack |
+	 ------------
+
+
+
+	 -------------------
+	| CLI Command Flags |
+	 -------------------
+
+
+
+	 --------
+	| Config |
+	 --------
+
+
+
+	 --------
+	| ETL    |
+	 --------
+
+
+
+	 --------
+	| Events |
+	 --------
+
+
+
+	 --------
+	| Events |
+	 --------
+
+
+
+	 -----------------------
+	| Cryptography          |
+	 -----------------------
+	 -----------------------
+	| Cryptography goCrypto |
+	 -----------------------
+	 -----------------------
+	| DSA                   |
+	 -----------------------
+
+
+
+	 -----------------------
+	| Platform CPU          |
+	 -----------------------
+	 -----------------------
+	| Platform MachineID    |
+	 -----------------------
+	 -----------------------
+	| Platform OS           |
+	 -----------------------
+	 -----------------------
+	| Platform SMBIOS       |
+	 -----------------------
+
+
+
+	 --------------------------
+	| Service                  |
+	 --------------------------
+	 --------------------------
+	| Service SPEC             |
+	 --------------------------
+	 --------------------------
+	| Service Encoders LaunchD |
+	 --------------------------
+	 --------------------------
+	| Service Encoders RC_D    |
+	 --------------------------
+	 --------------------------
+	| Service Encoders SystemD |
+	 --------------------------
+	 --------------------------
+	| Service Encoders SystemV |
+	 --------------------------
+	 --------------------------
+	| Service Encoders UpStart |
+	 --------------------------
+
+
+
+```
